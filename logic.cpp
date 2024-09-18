@@ -3,34 +3,7 @@
 #include "logic.hpp"
 
 using namespace std;
-
-// chessboard constructor
-//chessboard::chessboard()
-//{
-//	/* Generate a new board that should look as follows :
-//	
-//	RNBQKBNR
-//	PPPPPPPP
-//	________
-//	________
-//	________
-//	________
-//	PPPPPPPP
-//	RNBQKBNR
-//
-//	*/
-//
-//	const int DIM_SIZE = 8;
-//
-//	vector<piece> row(DIM_SIZE, '_');
-//	vector<vector<piece>> board(DIM_SIZE, row);
-//
-//	for (int i = 0; i < 8; i++)
-//	{
-//		board[i][3].empty = true;
-//	}
-//
-//}
+using namespace LogicEngine;
 
 Square::Square()
 {
@@ -44,14 +17,38 @@ Square::Square(char piece_type, Colour c)
 	piece = piece_type;
 }
 
-
-int main()
+vector<Square> Chessboard::get_valid_moves()
 {
+	return vector<Square>();
+}
+
+
+Chessboard::Chessboard()
+{
+	/* Generate a new board that should look as follows :
+	
+	RNBQKBNR
+	PPPPPPPP
+	________
+	________
+	________
+	________
+	PPPPPPPP
+	RNBQKBNR
+
+	*/
+
 	const int DIM_SIZE = 8;
 
 	vector<Square> row(DIM_SIZE);
-	vector<vector<Square>> board(DIM_SIZE, row);
+	vector<vector<Square>> b(DIM_SIZE, row);
 
-	board[0][0].colour = Colour::WHITE;
+	board = b;
+}
 
+
+int main()
+{
+	Chessboard c = Chessboard();
+	c.board[0][0].colour = Colour::WHITE;
 }
