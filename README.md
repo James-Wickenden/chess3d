@@ -1,6 +1,7 @@
 # chess3d
 
 Creating a 3D chess program to learn openGL and dive back into working with C++.
+
 https://github.com/James-Wickenden/chess3d
 
 ---
