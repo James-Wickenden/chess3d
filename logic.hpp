@@ -1,6 +1,7 @@
 // logic.hpp
 
 #pragma once
+#pragma warning( disable : 26451 )
 
 #include <vector>
 #include <map>

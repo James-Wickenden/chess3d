@@ -7,7 +7,6 @@ using namespace LogicEngine;
 
 const int DIM_SIZE = 8;
 
-
 Square::Square()
 {
 	colour = Colour::EMPTY;
@@ -26,40 +25,123 @@ Square::Square(Piece piece_type, Colour c)
 	has_moved = false;
 }
 
+vector<Square> get_prospective_pawn_moves(Square target, vector<vector<Square>> board, Colour opp_colour)
+{
+	vector<Square> prospective_moves;
+
+	// use +1 for white and -1 for black to find valid squares in the direction (dir) the pawn moves in
+	int dir = (target.colour == Colour::WHITE) ? 1 : -1;
+
+	if ((target.colour == Colour::WHITE && target.row < 7) || (target.colour == Colour::BLACK && target.row > 0))
+	{
+		// moving one square ahead
+		if (board[target.row + dir][target.col].colour == Colour::EMPTY)
+		{
+			prospective_moves.push_back(board[target.row + dir][target.col]);
+
+			// case for pawns on the starting file
+			if (!target.has_moved)
+			{
+				if (board[target.row + (dir * 2)][target.col].colour == Colour::EMPTY)
+				{
+					prospective_moves.push_back(board[target.row + (dir * 2)][target.col]);
+				}
+			}
+		}
+
+		// in the case where there is an opposite-coloured piece diagonally in front of the pawn: that piece is capturable
+		if (target.col > 0) {
+			if (board[target.row + dir][target.col - 1].colour == opp_colour) {
+				prospective_moves.push_back(board[target.row + dir][target.col - 1]);
+			}
+		}
+		if (target.col < 7) {
+			if (board[target.row + dir][target.col + 1].colour == opp_colour) {
+				prospective_moves.push_back(board[target.row + dir][target.col + 1]);
+			}
+		}
+	}
+
+	return prospective_moves;
+}
+
+
+vector<Square> get_prospective_rook_moves(Square target, vector<vector<Square>> board, Colour opp_colour)
+{
+	vector<Square> prospective_moves;
+
+
+	return prospective_moves;
+}
+
+
+vector<Square> get_prospective_bishop_moves(Square target, vector<vector<Square>> board, Colour opp_colour)
+{
+	vector<Square> prospective_moves;
+
+
+	return prospective_moves;
+}
+
+
+vector<Square> get_prospective_queen_moves(Square target, vector<vector<Square>> board, Colour opp_colour)
+{
+	vector<Square> prospective_moves;
+
+
+	return prospective_moves;
+}
+
+
+vector<Square> get_prospective_knight_moves(Square target, vector<vector<Square>> board, Colour opp_colour)
+{
+	vector<Square> prospective_moves;
+
+
+	return prospective_moves;
+}
+
+
+vector<Square> get_prospective_king_moves(Square target, vector<vector<Square>> board, Colour opp_colour)
+{
+	vector<Square> prospective_moves;
+
+
+	return prospective_moves;
+}
+
+
 void Chessboard::find_valid_moves(Square target)
 {
-	vector<Square> valid_moves;
+	vector<Square> prospective_moves;
 	vector<vector<Square>> board = this->board;
+	Colour opp_colour = (target.colour == Colour::WHITE) ? Colour::BLACK : Colour::WHITE;
 
 	switch (target.piece)
 	{
 	case Piece::EMPTY:
 		break;
 	case Piece::PAWN:
-		// use +1 for white and -1 for black to find valid squares in the direction (dir) the pawn moves in
-		int dir = (target.colour == Colour::WHITE) ? 1 : -1;
-
-		if ((target.colour == Colour::WHITE && target.row < 7) || (target.colour == Colour::BLACK && target.row > 0))
-		{
-			if (board[target.row + dir][target.col].colour == Colour::EMPTY)
-			{
-				valid_moves.push_back(board[target.row + dir][target.col]);
-
-				// case for pawns on the starting file.
-				// note this will cause errors on custom boards with pawns being able to move two spaces from different files. ignore for now.
-				if (!target.has_moved) 
-				{
-					if (board[target.row + (dir * 2)][target.col].colour == Colour::EMPTY)
-					{
-						valid_moves.push_back(board[target.row + (dir * 2)][target.col]);
-					}
-				}
-			}
-		}
+		prospective_moves = get_prospective_pawn_moves(target, board, opp_colour);
+		break;
+	case Piece::ROOK:
+		prospective_moves = get_prospective_rook_moves(target, board, opp_colour);
+		break;
+	case Piece::BISHOP:
+		prospective_moves = get_prospective_bishop_moves(target, board, opp_colour);
+		break;
+	case Piece::QUEEN:
+		prospective_moves = get_prospective_queen_moves(target, board, opp_colour);
+		break;
+	case Piece::KNIGHT:
+		prospective_moves = get_prospective_knight_moves(target, board, opp_colour);
+		break;
+	case Piece::KING:
+		prospective_moves = get_prospective_king_moves(target, board, opp_colour);
 		break;
 	}
 
-	this->valid_moves = valid_moves;
+	this->valid_moves = prospective_moves;
 	return;
 }
 
