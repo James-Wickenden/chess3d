@@ -12,21 +12,59 @@ Square::Square()
 {
 	colour = Colour::EMPTY;
 	piece = Piece::EMPTY;
+	row = -1;
+	col = -1;
+	has_moved = false;
 }
 
 Square::Square(Piece piece_type, Colour c)
 {
 	colour = c;
 	piece = piece_type;
+	row = -1;
+	col = -1;
+	has_moved = false;
 }
 
-vector<Square> Chessboard::get_valid_moves()
+void Chessboard::find_valid_moves(Square target)
 {
-	return vector<Square>();
+	vector<Square> valid_moves;
+	vector<vector<Square>> board = this->board;
+
+	switch (target.piece)
+	{
+	case Piece::EMPTY:
+		break;
+	case Piece::PAWN:
+		// use +1 for white and -1 for black to find valid squares in the direction (dir) the pawn moves in
+		int dir = (target.colour == Colour::WHITE) ? 1 : -1;
+
+		if ((target.colour == Colour::WHITE && target.row < 7) || (target.colour == Colour::BLACK && target.row > 0))
+		{
+			if (board[target.row + dir][target.col].colour == Colour::EMPTY)
+			{
+				valid_moves.push_back(board[target.row + dir][target.col]);
+
+				// case for pawns on the starting file.
+				// note this will cause errors on custom boards with pawns being able to move two spaces from different files. ignore for now.
+				if (!target.has_moved) 
+				{
+					if (board[target.row + (dir * 2)][target.col].colour == Colour::EMPTY)
+					{
+						valid_moves.push_back(board[target.row + (dir * 2)][target.col]);
+					}
+				}
+			}
+		}
+		break;
+	}
+
+	this->valid_moves = valid_moves;
+	return;
 }
 
 
-void print_board(Chessboard cb)
+void print_board(Chessboard chessboard)
 {
 	map<Piece, char> piece_map = {
 		{ Piece::EMPTY,  ' ' },
@@ -42,7 +80,7 @@ void print_board(Chessboard cb)
 	{
 		for (int j = 0; j < DIM_SIZE; j++)
 		{
-			cout << piece_map[cb.board[i][j].piece];
+			cout << piece_map[chessboard.board[i][j].piece];
 		}
 		cout << '\n';
 	}
@@ -92,6 +130,15 @@ Chessboard::Chessboard()
 		board[i][6].piece = Piece::KNIGHT;
 		board[i][7].piece = Piece::ROOK;
 	}
+
+	for (int i = 0; i < DIM_SIZE; i++)
+	{
+		for (int j = 0; j < DIM_SIZE; j++)
+		{
+			board[i][j].row = i;
+			board[i][j].col = j;
+		}
+	}
 }
 
 
@@ -99,5 +146,5 @@ int main()
 {
 	Chessboard cb = Chessboard();
 	print_board(cb);
-
+	cb.find_valid_moves(cb.board[1][0]);
 }

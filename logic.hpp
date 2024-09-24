@@ -8,13 +8,13 @@
 
 namespace LogicEngine 
 {
-
     enum class Colour 
     {
         WHITE,
         BLACK,
         EMPTY
     };
+
     enum class Piece 
     {
         EMPTY,
@@ -32,6 +32,9 @@ namespace LogicEngine
     public:
         Colour colour;
         Piece piece;
+        int row;
+        int col;
+        bool has_moved;
 
         Square();
         Square(Piece piece, Colour colour);
@@ -45,7 +48,10 @@ namespace LogicEngine
     public:
         std::vector<std::vector<Square>> board;
 
-        std::vector<Square> get_valid_moves();
+        Square selected_square;
+        std::vector<Square> valid_moves;
+
+        void find_valid_moves(Square target);
         Chessboard();
     };
 }
