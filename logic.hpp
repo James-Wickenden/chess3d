@@ -3,13 +3,27 @@
 #pragma once
 
 #include <vector>
+#include <map>
+#include <iostream>
 
-namespace LogicEngine {
+namespace LogicEngine 
+{
 
-    enum class Colour {
+    enum class Colour 
+    {
         WHITE,
         BLACK,
         EMPTY
+    };
+    enum class Piece 
+    {
+        EMPTY,
+        PAWN,
+        ROOK,
+        KNIGHT,
+        BISHOP,
+        QUEEN,
+        KING
     };
 
     // Define a square. A square can be empty or occupied by a piece
@@ -17,10 +31,10 @@ namespace LogicEngine {
     {
     public:
         Colour colour;
-        char piece;
+        Piece piece;
 
         Square();
-        Square(char piece_type, Colour colour);
+        Square(Piece piece, Colour colour);
     };
 
 
