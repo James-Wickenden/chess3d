@@ -6,6 +6,8 @@
 #include <vector>
 #include <map>
 #include <iostream>
+#include <string>
+#include <algorithm>
 
 namespace LogicEngine 
 {
@@ -38,6 +40,7 @@ namespace LogicEngine
         bool has_moved;
 
         Square();
+        Square(int row, int col);
         Square(Piece piece, Colour colour);
     };
 
@@ -52,7 +55,7 @@ namespace LogicEngine
         Square selected_square;
         std::vector<Square> valid_moves;
 
-        void find_valid_moves(Square target);
+        std::vector<Square> find_valid_moves(Square target);
         Chessboard();
     };
 }

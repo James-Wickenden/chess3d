@@ -16,6 +16,15 @@ Square::Square()
 	has_moved = false;
 }
 
+Square::Square(int r, int c)
+{
+	colour = Colour::EMPTY;
+	piece = Piece::EMPTY;
+	row = r;
+	col = c;
+	has_moved = false;
+}
+
 Square::Square(Piece piece_type, Colour c)
 {
 	colour = c;
@@ -70,6 +79,89 @@ vector<Square> get_prospective_rook_moves(Square target, vector<vector<Square>> 
 {
 	vector<Square> prospective_moves;
 
+	// forwards
+	bool progress_search = true;
+	for (int i = 0; i < DIM_SIZE; i++)
+	{
+		if ((target.row + i) >= DIM_SIZE) progress_search = false;
+		if (!progress_search) continue;
+		if (board[target.row + i][target.col].colour == Colour::EMPTY)
+		{
+			prospective_moves.push_back(board[target.row + i][target.col]);
+		}
+		else if (board[target.row + i][target.col].colour == opp_colour)
+		{
+			prospective_moves.push_back(board[target.row + i][target.col]);
+			progress_search = false;
+		}
+		else if (board[target.row + i][target.col].colour == target.colour)
+		{
+			progress_search = false;
+		}
+	}
+
+	// backwards
+	progress_search = true;
+	for (int i = 0; i < DIM_SIZE; i++)
+	{
+		if ((target.row - i) >= DIM_SIZE) progress_search = false;
+		if (!progress_search) continue;
+		if (board[target.row - i][target.col].colour == Colour::EMPTY)
+		{
+			prospective_moves.push_back(board[target.row - i][target.col]);
+		}
+		else if (board[target.row - i][target.col].colour == opp_colour)
+		{
+			prospective_moves.push_back(board[target.row - i][target.col]);
+			progress_search = false;
+		}
+		else if (board[target.row - i][target.col].colour == target.colour)
+		{
+			progress_search = false;
+		}
+	}
+
+	// left
+	progress_search = true;
+	for (int i = 0; i < DIM_SIZE; i++)
+	{
+		if ((target.col + i) >= DIM_SIZE) progress_search = false;
+		if (!progress_search) continue;
+		if (board[target.row][target.col + i].colour == Colour::EMPTY)
+		{
+			prospective_moves.push_back(board[target.row][target.col + i]);
+		}
+		else if (board[target.row][target.col + i].colour == opp_colour)
+		{
+			prospective_moves.push_back(board[target.row][target.col + i]);
+			progress_search = false;
+		}
+		else if (board[target.row][target.col + i].colour == target.colour)
+		{
+			progress_search = false;
+		}
+	}
+
+	// right
+	progress_search = true;
+	for (int i = 0; i < DIM_SIZE; i++)
+	{
+		if ((target.col - i) >= DIM_SIZE) progress_search = false;
+		if (!progress_search) continue;
+		if (board[target.row][target.col - i].colour == Colour::EMPTY)
+		{
+			prospective_moves.push_back(board[target.row][target.col - i]);
+		}
+		else if (board[target.row][target.col - i].colour == opp_colour)
+		{
+			prospective_moves.push_back(board[target.row][target.col - i]);
+			progress_search = false;
+		}
+		else if (board[target.row][target.col - i].colour == target.colour)
+		{
+			progress_search = false;
+		}
+	}
 
 	return prospective_moves;
 }
@@ -79,6 +171,89 @@ vector<Square> get_prospective_bishop_moves(Square target, vector<vector<Square>
 {
 	vector<Square> prospective_moves;
 
+	// up-right
+	bool progress_search = true;
+	for (int i = 0; i < DIM_SIZE; i++)
+	{
+		if ((target.row + i) >= DIM_SIZE && (target.col + i) >= DIM_SIZE) progress_search = false;
+		if (!progress_search) continue;
+		if (board[target.row + i][target.col + i].colour == Colour::EMPTY)
+		{
+			prospective_moves.push_back(board[target.row + i][target.col + i]);
+		}
+		else if (board[target.row + i][target.col + i].colour == opp_colour)
+		{
+			prospective_moves.push_back(board[target.row + i][target.col + i]);
+			progress_search = false;
+		}
+		else if (board[target.row + i][target.col + i].colour == target.colour)
+		{
+			progress_search = false;
+		}
+	}
+
+	// down-right
+	progress_search = true;
+	for (int i = 0; i < DIM_SIZE; i++)
+	{
+		if ((target.row - i) >= DIM_SIZE && (target.col + i) >= DIM_SIZE) progress_search = false;
+		if (!progress_search) continue;
+		if (board[target.row - i][target.col + i].colour == Colour::EMPTY)
+		{
+			prospective_moves.push_back(board[target.row - i][target.col + i]);
+		}
+		else if (board[target.row - i][target.col + i].colour == opp_colour)
+		{
+			prospective_moves.push_back(board[target.row - i][target.col + i]);
+			progress_search = false;
+		}
+		else if (board[target.row - i][target.col + i].colour == target.colour)
+		{
+			progress_search = false;
+		}
+	}
+
+	// up-left
+	progress_search = true;
+	for (int i = 0; i < DIM_SIZE; i++)
+	{
+		if ((target.row + i) >= DIM_SIZE && (target.col - i) >= DIM_SIZE) progress_search = false;
+		if (!progress_search) continue;
+		if (board[target.row + i][target.col - i].colour == Colour::EMPTY)
+		{
+			prospective_moves.push_back(board[target.row + i][target.col - i]);
+		}
+		else if (board[target.row + i][target.col - i].colour == opp_colour)
+		{
+			prospective_moves.push_back(board[target.row + i][target.col - i]);
+			progress_search = false;
+		}
+		else if (board[target.row + i][target.col - i].colour == target.colour)
+		{
+			progress_search = false;
+		}
+	}
+
+	// down-left
+	progress_search = true;
+	for (int i = 0; i < DIM_SIZE; i++)
+	{
+		if ((target.row - i) >= DIM_SIZE && (target.col - i) >= DIM_SIZE) progress_search = false;
+		if (!progress_search) continue;
+		if (board[target.row - i][target.col - i].colour == Colour::EMPTY)
+		{
+			prospective_moves.push_back(board[target.row - i][target.col - i]);
+		}
+		else if (board[target.row - i][target.col - i].colour == opp_colour)
+		{
+			prospective_moves.push_back(board[target.row - i][target.col - i]);
+			progress_search = false;
+		}
+		else if (board[target.row - i][target.col - i].colour == target.colour)
+		{
+			progress_search = false;
+		}
+	}
 
 	return prospective_moves;
 }
@@ -86,9 +261,12 @@ vector<Square> get_prospective_bishop_moves(Square target, vector<vector<Square>
 
 vector<Square> get_prospective_queen_moves(Square target, vector<vector<Square>> board, Colour opp_colour)
 {
-	vector<Square> prospective_moves;
+	vector<Square> prospective_moves_rook = get_prospective_rook_moves(target, board, opp_colour);
+	vector<Square> prospective_moves_bishop = get_prospective_bishop_moves(target, board, opp_colour);
 
-
+	// concatenate prospective moves for rook and bishop
+	vector<Square> prospective_moves = prospective_moves_rook;
+	prospective_moves.insert(prospective_moves.end(), prospective_moves_bishop.begin(), prospective_moves_bishop.end());
 	return prospective_moves;
 }
 
@@ -111,7 +289,7 @@ vector<Square> get_prospective_king_moves(Square target, vector<vector<Square>> 
 }
 
 
-void Chessboard::find_valid_moves(Square target)
+vector<Square> Chessboard::find_valid_moves(Square target)
 {
 	vector<Square> prospective_moves;
 	vector<vector<Square>> board = this->board;
@@ -142,7 +320,7 @@ void Chessboard::find_valid_moves(Square target)
 	}
 
 	this->valid_moves = prospective_moves;
-	return;
+	return prospective_moves;
 }
 
 
@@ -158,14 +336,17 @@ void print_board(Chessboard chessboard)
 		{ Piece::KING,   'K' }
 	};
 
+	cout << "Current board : \n\n";
 	for (int i = 0; i < DIM_SIZE; i++)
 	{
+		cout << (char)('0' + (DIM_SIZE - i)) << ' ';
 		for (int j = 0; j < DIM_SIZE; j++)
 		{
-			cout << piece_map[chessboard.board[i][j].piece];
+			cout << piece_map[chessboard.board[DIM_SIZE-(1+i)][j].piece];
 		}
 		cout << '\n';
 	}
+	cout << "\n  abcdefgh\n\n";
 	return;
 }
 
@@ -224,9 +405,68 @@ Chessboard::Chessboard()
 }
 
 
+string convert_int_to_chessboard_square(int row, int col)
+{
+	string res = "";
+	res += ('a' + row);
+	res += ('1' + col);
+	return res;
+}
+
+
+vector<int> convert_chessboard_square_to_int(string position)
+{
+	vector<int> res;
+	res.push_back(position[1] - '1');
+	res.push_back(position[0] - 'a');
+	return res;
+}
+
+
+void loop_board(Chessboard cb)
+{
+	while(true)
+	{
+		print_board(cb);
+
+		// first select the piece to move and get a list of the squares the piece can move to
+		string target_square, destination_square;
+		cout << "Input target square: ";
+		getline(cin, target_square);
+
+		vector<int> target_position = convert_chessboard_square_to_int(target_square);
+
+		cout << "Moves: ";
+		vector<Square> vms = cb.find_valid_moves(cb.board[target_position[0]][target_position[1]]);
+		for (int i = 0; i < vms.size(); i++)
+		{
+			cout << convert_int_to_chessboard_square(vms[i].col, vms[i].row) << ' ';
+		}
+
+		// then get the square to move to, and if on the list, make the move
+		cout << "\nChoose destination square: ";
+		getline(cin, destination_square);
+
+		vector<int> destination_position = convert_chessboard_square_to_int(destination_square);
+
+		for (int i = 0; i < vms.size(); i++)
+		{
+			if (vms[i].row == destination_position[0] && vms[i].col == destination_position[1])
+			{
+				// move the piece
+				cb.board[destination_position[0]][destination_position[1]] = cb.board[target_position[0]][target_position[1]];
+				cb.board[target_position[0]][target_position[1]] = Square(target_position[0], target_position[1]);
+			}
+		}
+	}
+
+	return;
+}
+
+
 int main()
 {
 	Chessboard cb = Chessboard();
-	print_board(cb);
-	cb.find_valid_moves(cb.board[1][0]);
+	loop_board(cb);
+	
 }
