@@ -454,7 +454,10 @@ void loop_board(Chessboard cb)
 			if (vms[i].row == destination_position[0] && vms[i].col == destination_position[1])
 			{
 				// move the piece
-				cb.board[destination_position[0]][destination_position[1]] = cb.board[target_position[0]][target_position[1]];
+				cb.board[destination_position[0]][destination_position[1]].piece = cb.board[target_position[0]][target_position[1]].piece;
+				cb.board[destination_position[0]][destination_position[1]].colour = cb.board[target_position[0]][target_position[1]].colour;
+				cb.board[destination_position[0]][destination_position[1]].has_moved = true;
+
 				cb.board[target_position[0]][target_position[1]] = Square(target_position[0], target_position[1]);
 			}
 		}
