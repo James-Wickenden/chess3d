@@ -298,10 +298,22 @@ vector<Square> get_prospective_knight_moves(Square target, vector<vector<Square>
 }
 
 
+// Look in the immediate 3x3 grid around the king and check for any empty or opponent-occupied squares.
 vector<Square> get_prospective_king_moves(Square target, vector<vector<Square>> board, Colour opp_colour)
 {
 	vector<Square> prospective_moves;
 
+	for (int i = -1; i <= 1; i++)
+	{
+		for (int j = -1; j <= 1; j++)
+		{
+			if ((target.row + i >= DIM_SIZE) || (target.row + i < 0) || (target.col + j >= DIM_SIZE) || (target.col + j < 0))
+				continue;
+
+			Square test_square = board[target.row + i][target.col + j];
+			if (test_square.colour == Colour::EMPTY || test_square.colour == opp_colour) prospective_moves.push_back(test_square);
+		}
+	}
 
 	return prospective_moves;
 }
