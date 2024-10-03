@@ -75,26 +75,32 @@ vector<Square> get_prospective_pawn_moves(Square target, vector<vector<Square>> 
 }
 
 
+// For each cardinal direction outwards from the piece location, we:
+// progress forwards in the direction, adding all empty squares to the list of prospective moves
+// if we reach a non-empty square:
+// if the opposite colour: add it to the list and prevent moving further.
+// if the same colour: just prevent moving further
 vector<Square> get_prospective_rook_moves(Square target, vector<vector<Square>> board, Colour opp_colour)
 {
 	vector<Square> prospective_moves;
 
 	// forwards
 	bool progress_search = true;
-	for (int i = 0; i < DIM_SIZE; i++)
+	for (int i = 1; i < DIM_SIZE; i++)
 	{
 		if ((target.row + i) >= DIM_SIZE) progress_search = false;
 		if (!progress_search) continue;
-		if (board[target.row + i][target.col].colour == Colour::EMPTY)
+		Square test_square = board[target.row + i][target.col];
+		if (test_square.colour == Colour::EMPTY)
 		{
-			prospective_moves.push_back(board[target.row + i][target.col]);
+			prospective_moves.push_back(test_square);
 		}
-		else if (board[target.row + i][target.col].colour == opp_colour)
+		else if (test_square.colour == opp_colour)
 		{
-			prospective_moves.push_back(board[target.row + i][target.col]);
+			prospective_moves.push_back(test_square);
 			progress_search = false;
 		}
-		else if (board[target.row + i][target.col].colour == target.colour)
+		else if (test_square.colour == target.colour)
 		{
 			progress_search = false;
 		}
@@ -102,20 +108,21 @@ vector<Square> get_prospective_rook_moves(Square target, vector<vector<Square>> 
 
 	// backwards
 	progress_search = true;
-	for (int i = 0; i < DIM_SIZE; i++)
+	for (int i = 1; i < DIM_SIZE; i++)
 	{
-		if ((target.row - i) >= DIM_SIZE) progress_search = false;
+		if ((target.row - i) < 0) progress_search = false;
 		if (!progress_search) continue;
-		if (board[target.row - i][target.col].colour == Colour::EMPTY)
+		Square test_square = board[target.row - i][target.col];
+		if (test_square.colour == Colour::EMPTY)
 		{
-			prospective_moves.push_back(board[target.row - i][target.col]);
+			prospective_moves.push_back(test_square);
 		}
-		else if (board[target.row - i][target.col].colour == opp_colour)
+		else if (test_square.colour == opp_colour)
 		{
-			prospective_moves.push_back(board[target.row - i][target.col]);
+			prospective_moves.push_back(test_square);
 			progress_search = false;
 		}
-		else if (board[target.row - i][target.col].colour == target.colour)
+		else if (test_square.colour == target.colour)
 		{
 			progress_search = false;
 		}
@@ -123,20 +130,21 @@ vector<Square> get_prospective_rook_moves(Square target, vector<vector<Square>> 
 
 	// left
 	progress_search = true;
-	for (int i = 0; i < DIM_SIZE; i++)
+	for (int i = 1; i < DIM_SIZE; i++)
 	{
 		if ((target.col + i) >= DIM_SIZE) progress_search = false;
 		if (!progress_search) continue;
-		if (board[target.row][target.col + i].colour == Colour::EMPTY)
+		Square test_square = board[target.row][target.col + i];
+		if (test_square.colour == Colour::EMPTY)
 		{
-			prospective_moves.push_back(board[target.row][target.col + i]);
+			prospective_moves.push_back(test_square);
 		}
-		else if (board[target.row][target.col + i].colour == opp_colour)
+		else if (test_square.colour == opp_colour)
 		{
-			prospective_moves.push_back(board[target.row][target.col + i]);
+			prospective_moves.push_back(test_square);
 			progress_search = false;
 		}
-		else if (board[target.row][target.col + i].colour == target.colour)
+		else if (test_square.colour == target.colour)
 		{
 			progress_search = false;
 		}
@@ -144,20 +152,21 @@ vector<Square> get_prospective_rook_moves(Square target, vector<vector<Square>> 
 
 	// right
 	progress_search = true;
-	for (int i = 0; i < DIM_SIZE; i++)
+	for (int i = 1; i < DIM_SIZE; i++)
 	{
-		if ((target.col - i) >= DIM_SIZE) progress_search = false;
+		if ((target.col - i) < 0) progress_search = false;
 		if (!progress_search) continue;
-		if (board[target.row][target.col - i].colour == Colour::EMPTY)
+		Square test_square = board[target.row][target.col - i];
+		if (test_square.colour == Colour::EMPTY)
 		{
-			prospective_moves.push_back(board[target.row][target.col - i]);
+			prospective_moves.push_back(test_square);
 		}
-		else if (board[target.row][target.col - i].colour == opp_colour)
+		else if (test_square.colour == opp_colour)
 		{
-			prospective_moves.push_back(board[target.row][target.col - i]);
+			prospective_moves.push_back(test_square);
 			progress_search = false;
 		}
-		else if (board[target.row][target.col - i].colour == target.colour)
+		else if (test_square.colour == target.colour)
 		{
 			progress_search = false;
 		}
@@ -167,26 +176,32 @@ vector<Square> get_prospective_rook_moves(Square target, vector<vector<Square>> 
 }
 
 
+// For each diagonal direction outwards from the piece location, we:
+// progress in the direction, adding all empty squares to the list of prospective moves
+// if we reach a non-empty square:
+// if the opposite colour: add it to the list and prevent moving further.
+// if the same colour: just prevent moving further
 vector<Square> get_prospective_bishop_moves(Square target, vector<vector<Square>> board, Colour opp_colour)
 {
 	vector<Square> prospective_moves;
 
 	// up-right
 	bool progress_search = true;
-	for (int i = 0; i < DIM_SIZE; i++)
+	for (int i = 1; i < DIM_SIZE; i++)
 	{
-		if ((target.row + i) >= DIM_SIZE && (target.col + i) >= DIM_SIZE) progress_search = false;
+		if ((target.row + i) >= DIM_SIZE || (target.col + i) >= DIM_SIZE) progress_search = false;
 		if (!progress_search) continue;
-		if (board[target.row + i][target.col + i].colour == Colour::EMPTY)
+		Square test_square = board[target.row + i][target.col + i];
+		if (test_square.colour == Colour::EMPTY)
 		{
-			prospective_moves.push_back(board[target.row + i][target.col + i]);
+			prospective_moves.push_back(test_square);
 		}
-		else if (board[target.row + i][target.col + i].colour == opp_colour)
+		else if (test_square.colour == opp_colour)
 		{
-			prospective_moves.push_back(board[target.row + i][target.col + i]);
+			prospective_moves.push_back(test_square);
 			progress_search = false;
 		}
-		else if (board[target.row + i][target.col + i].colour == target.colour)
+		else if (test_square.colour == target.colour)
 		{
 			progress_search = false;
 		}
@@ -194,20 +209,21 @@ vector<Square> get_prospective_bishop_moves(Square target, vector<vector<Square>
 
 	// down-right
 	progress_search = true;
-	for (int i = 0; i < DIM_SIZE; i++)
+	for (int i = 1; i < DIM_SIZE; i++)
 	{
-		if ((target.row - i) >= DIM_SIZE && (target.col + i) >= DIM_SIZE) progress_search = false;
+		if ((target.row - i) < 0 || (target.col + i) >= DIM_SIZE) progress_search = false;
 		if (!progress_search) continue;
-		if (board[target.row - i][target.col + i].colour == Colour::EMPTY)
+		Square test_square = board[target.row - i][target.col + i];
+		if (test_square.colour == Colour::EMPTY)
 		{
-			prospective_moves.push_back(board[target.row - i][target.col + i]);
+			prospective_moves.push_back(test_square);
 		}
-		else if (board[target.row - i][target.col + i].colour == opp_colour)
+		else if (test_square.colour == opp_colour)
 		{
-			prospective_moves.push_back(board[target.row - i][target.col + i]);
+			prospective_moves.push_back(test_square);
 			progress_search = false;
 		}
-		else if (board[target.row - i][target.col + i].colour == target.colour)
+		else if (test_square.colour == target.colour)
 		{
 			progress_search = false;
 		}
@@ -215,20 +231,21 @@ vector<Square> get_prospective_bishop_moves(Square target, vector<vector<Square>
 
 	// up-left
 	progress_search = true;
-	for (int i = 0; i < DIM_SIZE; i++)
+	for (int i = 1; i < DIM_SIZE; i++)
 	{
-		if ((target.row + i) >= DIM_SIZE && (target.col - i) >= DIM_SIZE) progress_search = false;
+		if ((target.row + i) >= DIM_SIZE || (target.col - i) < 0) progress_search = false;
 		if (!progress_search) continue;
-		if (board[target.row + i][target.col - i].colour == Colour::EMPTY)
+		Square test_square = board[target.row + i][target.col - i];
+		if (test_square.colour == Colour::EMPTY)
 		{
-			prospective_moves.push_back(board[target.row + i][target.col - i]);
+			prospective_moves.push_back(test_square);
 		}
-		else if (board[target.row + i][target.col - i].colour == opp_colour)
+		else if (test_square.colour == opp_colour)
 		{
-			prospective_moves.push_back(board[target.row + i][target.col - i]);
+			prospective_moves.push_back(test_square);
 			progress_search = false;
 		}
-		else if (board[target.row + i][target.col - i].colour == target.colour)
+		else if (test_square.colour == target.colour)
 		{
 			progress_search = false;
 		}
@@ -236,20 +253,21 @@ vector<Square> get_prospective_bishop_moves(Square target, vector<vector<Square>
 
 	// down-left
 	progress_search = true;
-	for (int i = 0; i < DIM_SIZE; i++)
+	for (int i = 1; i < DIM_SIZE; i++)
 	{
-		if ((target.row - i) >= DIM_SIZE && (target.col - i) >= DIM_SIZE) progress_search = false;
+		if ((target.row - i) < 0 || (target.col - i) < 0) progress_search = false;
 		if (!progress_search) continue;
-		if (board[target.row - i][target.col - i].colour == Colour::EMPTY)
+		Square test_square = board[target.row - i][target.col - i];
+		if (test_square.colour == Colour::EMPTY)
 		{
-			prospective_moves.push_back(board[target.row - i][target.col - i]);
+			prospective_moves.push_back(test_square);
 		}
-		else if (board[target.row - i][target.col - i].colour == opp_colour)
+		else if (test_square.colour == opp_colour)
 		{
-			prospective_moves.push_back(board[target.row - i][target.col - i]);
+			prospective_moves.push_back(test_square);
 			progress_search = false;
 		}
-		else if (board[target.row - i][target.col - i].colour == target.colour)
+		else if (test_square.colour == target.colour)
 		{
 			progress_search = false;
 		}
@@ -446,6 +464,7 @@ void loop_board(Chessboard cb)
 		// then get the square to move to, and if on the list, make the move
 		cout << "\nChoose destination square: ";
 		getline(cin, destination_square);
+		if (destination_square == "") continue;
 
 		vector<int> destination_position = convert_chessboard_square_to_int(destination_square);
 
