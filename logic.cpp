@@ -289,10 +289,32 @@ vector<Square> get_prospective_queen_moves(Square target, vector<vector<Square>>
 }
 
 
+bool is_knight_square_prospective(Square target, vector<vector<Square>> board, Colour opp_colour, int row_t, int col_t)
+{
+	if ((target.row + row_t >= DIM_SIZE) || (target.row + row_t < 0) || (target.col + col_t >= DIM_SIZE) || (target.col + col_t < 0))
+		return false;
+	Square test_square = board[target.row + row_t][target.col + col_t];
+
+	if (test_square.colour == Colour::EMPTY || test_square.colour == opp_colour)
+		return true;
+
+	return false;
+}
+
+
 vector<Square> get_prospective_knight_moves(Square target, vector<vector<Square>> board, Colour opp_colour)
 {
 	vector<Square> prospective_moves;
+	vector<tuple<int, int>> knight_moves = { {-2, -1}, {-2, 1}, {2, -1}, {2, 1}, {-1, -2}, {-1, 2}, {1, -2}, {1, 2} };
 
+	for (int i = 0; i < knight_moves.size(); i++)
+	{
+		if (is_knight_square_prospective(target, board, opp_colour, get<0>(knight_moves[i]), get<1>(knight_moves[i])))
+		{
+			Square test_square = board[target.row + get<0>(knight_moves[i])][target.col + get<1>(knight_moves[i])];
+			prospective_moves.push_back(test_square);
+		}
+	}
 
 	return prospective_moves;
 }

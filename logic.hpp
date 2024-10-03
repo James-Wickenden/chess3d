@@ -8,6 +8,7 @@
 #include <iostream>
 #include <string>
 #include <algorithm>
+#include <tuple>
 
 namespace LogicEngine 
 {
