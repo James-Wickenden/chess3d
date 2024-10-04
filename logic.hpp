@@ -39,6 +39,8 @@ namespace LogicEngine
         int row;
         int col;
         bool has_moved;
+        bool operator==(const Square rhs) const;
+        bool operator!=(const Square rhs) const;
 
         Square();
         Square(int row, int col);

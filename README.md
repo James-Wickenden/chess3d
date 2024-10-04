@@ -79,7 +79,7 @@ We first build a vector of *prospective* moves. These are the moves that a piece
 If either of the forward diagonals are occupied by an enemy piece, it can move there too.
 
 - If rook, then start at the piece and iterate along the rank until an occupied square is found. 
-For each square, also 
+For each square, also: 
 Every free square between the rook and the occupied square can be moved to.
 If the occupied square is an enemy piece, that square can also be moved to.
 Then iterate along the rank in the opposite direction, and repeat this for the file.

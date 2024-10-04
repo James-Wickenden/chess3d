@@ -34,6 +34,21 @@ Square::Square(Piece piece_type, Colour c)
 	has_moved = false;
 }
 
+bool Square::operator==(const Square rhs) const
+{
+	return (colour == rhs.colour)
+		&& (piece == rhs.piece)
+		&& (row == rhs.row)
+		&& (col == rhs.col)
+		&& (has_moved == rhs.has_moved);
+}
+
+bool Square::operator!=(const Square rhs) const
+{
+	return !operator==(rhs);
+}
+
+
 vector<Square> get_prospective_pawn_moves(Square target, vector<vector<Square>> board, Colour opp_colour)
 {
 	vector<Square> prospective_moves;
@@ -338,6 +353,7 @@ vector<Square> get_prospective_king_moves(Square target, vector<vector<Square>> 
 				continue;
 
 			Square test_square = board[target.row + i][target.col + j];
+			if (test_square.piece == Piece::KING) continue;
 			if (test_square.colour == Colour::EMPTY || test_square.colour == opp_colour) prospective_moves.push_back(test_square);
 		}
 	}
@@ -359,6 +375,89 @@ vector<Square> get_prospective_king_moves(Square target, vector<vector<Square>> 
 	}
 
 	return prospective_moves;
+}
+
+
+// Create a deep copy clone of an input chessboard
+vector<vector<Square>> deep_clone_board(vector<vector<Square>> original)
+{
+	vector<vector<Square>> copy;
+	for (int row = 0; row < DIM_SIZE; row++)
+	{
+		for (int col = 0; col < DIM_SIZE; col++)
+		{
+			copy[row][col].col = original[row][col].col;
+			copy[row][col].row = original[row][col].row;
+			copy[row][col].has_moved = original[row][col].has_moved;
+			copy[row][col].piece = original[row][col].piece;
+			copy[row][col].colour = original[row][col].colour;
+		}
+	}
+
+	return copy;
+}
+
+
+// Treat the king like a queen and find all the pieces it can see
+// If any of those pieces is a piece that could attack the king, it is under attack
+bool is_king_attacked(Square king, vector<vector<Square>> board, Colour opp_colour)
+{
+	vector<Square> raycast_king_moves_orthogonal = get_prospective_rook_moves(king, board, opp_colour);
+	for (int i = 0; i < raycast_king_moves_orthogonal.size(); i++)
+	{
+		if (raycast_king_moves_orthogonal[i].piece == Piece::ROOK || 
+			raycast_king_moves_orthogonal[i].piece == Piece::QUEEN)
+			return true;
+	}
+
+	vector<Square> raycast_king_moves_diagonal = get_prospective_bishop_moves(king, board, opp_colour);
+	for (int i = 0; i < raycast_king_moves_diagonal.size(); i++)
+	{
+		if (raycast_king_moves_diagonal[i].piece == Piece::BISHOP || 
+			raycast_king_moves_diagonal[i].piece == Piece::QUEEN)
+			return true;
+	}
+
+	return false;
+}
+
+
+// Take the prospective moves and identify which ones can be made.
+// Prospective moves cannot be made if making the move would open up the king to being captured by another piece
+vector<Square> trimmed_valid_moves(Square target, vector<vector<Square>> board, Colour opp_colour, vector<Square> prospective_moves)
+{
+	vector<Square> confirmed_moves;
+	// catch for the case where no prospective moves can be made
+	if (prospective_moves.size() == 0) return confirmed_moves;
+
+	for (int i = 0; i < prospective_moves.size(); i++)
+	{
+		vector<vector<Square>> test_board = deep_clone_board(board);
+		Square prosp_move = prospective_moves[i];
+
+		// make the prospective move on the test board
+		test_board[prosp_move.row][prosp_move.col].piece = test_board[target.row][target.col].piece;
+		test_board[prosp_move.row][prosp_move.col].colour = test_board[target.row][target.col].colour;
+		test_board[prosp_move.row][prosp_move.col].has_moved = true;
+
+		test_board[target.row][target.col] = Square(target.row, target.col);
+
+		// now, trace rays from the white king in each horizontal, vertical and diagonal direction.
+		// if we find a queen, rook or bishop then we are putting the king into check and the move is rejected
+		for (int row = 0; row < DIM_SIZE; row++)
+		{
+			for (int col = 0; col < DIM_SIZE; col++)
+			{
+				if (board[row][col].piece == Piece::KING && board[row][col].colour == target.colour)
+				{
+					Square king = board[row][col];
+					if (!is_king_attacked(king, board, opp_colour)) confirmed_moves.push_back(target);
+				}
+			}
+		}
+	}
+
+	return confirmed_moves;
 }
 
 
@@ -392,6 +491,7 @@ vector<Square> Chessboard::find_valid_moves(Square target)
 		break;
 	}
 
+	//vector<Square> confirmed_moves = trimmed_valid_moves(target, board, opp_colour, prospective_moves);
 	this->valid_moves = prospective_moves;
 	return prospective_moves;
 }
@@ -415,7 +515,14 @@ void print_board(Chessboard chessboard)
 		cout << (char)('0' + (DIM_SIZE - i)) << ' ';
 		for (int j = 0; j < DIM_SIZE; j++)
 		{
-			cout << piece_map[chessboard.board[DIM_SIZE-(1+i)][j].piece];
+			if (count(chessboard.valid_moves.begin(), chessboard.valid_moves.end(), chessboard.board[DIM_SIZE - (1 + i)][j]) > 0)
+			{
+				cout << "\033[0;43" << piece_map[chessboard.board[DIM_SIZE - (1 + i)][j].piece] << "\033[0m40";
+			}
+			else
+			{
+				cout << piece_map[chessboard.board[DIM_SIZE-(1+i)][j].piece];
+			}
 		}
 		cout << '\n';
 	}
