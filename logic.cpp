@@ -509,24 +509,40 @@ void print_board(Chessboard chessboard)
 		{ Piece::KING,   'K' }
 	};
 
-	cout << "Current board : \n\n";
+	std::cout << "Current board : \n\n";
 	for (int i = 0; i < DIM_SIZE; i++)
 	{
-		cout << (char)('0' + (DIM_SIZE - i)) << ' ';
+		std::cout << (char)('0' + (DIM_SIZE - i)) << ' ';
 		for (int j = 0; j < DIM_SIZE; j++)
 		{
+			// there are different cases for colouring the board: black tile, white tile, black piece, white piece, valid move, invalid move
+			// first, we colour the square, then draw the piece, then reset the colour
 			if (count(chessboard.valid_moves.begin(), chessboard.valid_moves.end(), chessboard.board[DIM_SIZE - (1 + i)][j]) > 0)
 			{
-				cout << "\033[0;43" << piece_map[chessboard.board[DIM_SIZE - (1 + i)][j].piece] << "\033[0m40";
+				// colour tile yellow for attacked square
+				std::cout << "\033[43m";
 			}
 			else
 			{
-				cout << piece_map[chessboard.board[DIM_SIZE-(1+i)][j].piece];
+				// colour tile black for black square, white for white square
+				switch ((i ^ j) & 1)
+				{
+					case 0: std::cout << "\033[40m";
+					case 1: std::cout << "\033[47m";
+				}
 			}
+
+			switch (chessboard.board[DIM_SIZE - (1 + i)][j].colour)
+			{
+				case Colour::WHITE: std::cout << "\033[31m";
+				case Colour::BLACK: std::cout << "\033[32m";
+			}
+
+			std::cout << piece_map[chessboard.board[DIM_SIZE - (1 + i)][j].piece] << "\033[0m";
 		}
-		cout << '\n';
+		std::cout << '\n';
 	}
-	cout << "\n  abcdefgh\n\n";
+	std::cout << "\n  abcdefgh\n\n";
 	return;
 }
 
@@ -611,20 +627,23 @@ void loop_board(Chessboard cb)
 
 		// first select the piece to move and get a list of the squares the piece can move to
 		string target_square, destination_square;
-		cout << "Input target square: ";
+		std::cout << "Input target square: ";
 		getline(cin, target_square);
 
 		vector<int> target_position = convert_chessboard_square_to_int(target_square);
 
-		cout << "Moves: ";
+		std::cout << "Moves: ";
 		vector<Square> vms = cb.find_valid_moves(cb.board[target_position[0]][target_position[1]]);
 		for (int i = 0; i < vms.size(); i++)
 		{
-			cout << convert_int_to_chessboard_square(vms[i].col, vms[i].row) << ' ';
+			std::cout << convert_int_to_chessboard_square(vms[i].col, vms[i].row) << ' ';
 		}
+		std::cout << '\n';
+
+		print_board(cb);
 
 		// then get the square to move to, and if on the list, make the move
-		cout << "\nChoose destination square: ";
+		std::cout << "\nChoose destination square: ";
 		getline(cin, destination_square);
 		if (destination_square == "") continue;
 
@@ -642,6 +661,8 @@ void loop_board(Chessboard cb)
 				cb.board[target_position[0]][target_position[1]] = Square(target_position[0], target_position[1]);
 			}
 		}
+
+		cb.valid_moves = vector<Square>();
 	}
 
 	return;
