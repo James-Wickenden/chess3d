@@ -71,6 +71,10 @@ vector<Square> get_prospective_pawn_moves(Square target, vector<vector<Square>> 
 		}
 	}
 
+	//todo: en passant prospective move
+	//
+	//
+
 	return prospective_moves;
 }
 
@@ -321,6 +325,7 @@ vector<Square> get_prospective_knight_moves(Square target, vector<vector<Square>
 
 
 // Look in the immediate 3x3 grid around the king and check for any empty or opponent-occupied squares.
+// Then check for castling opportunies
 vector<Square> get_prospective_king_moves(Square target, vector<vector<Square>> board, Colour opp_colour)
 {
 	vector<Square> prospective_moves;
@@ -334,6 +339,22 @@ vector<Square> get_prospective_king_moves(Square target, vector<vector<Square>> 
 
 			Square test_square = board[target.row + i][target.col + j];
 			if (test_square.colour == Colour::EMPTY || test_square.colour == opp_colour) prospective_moves.push_back(test_square);
+		}
+	}
+
+	if (!target.has_moved)
+	{
+		// queenside O-O-O
+		if (!board[target.row][0].has_moved)
+		{
+			if (board[target.row][1].piece == Piece::EMPTY && board[target.row][2].piece == Piece::EMPTY && board[target.row][3].piece == Piece::EMPTY)
+				prospective_moves.push_back(board[target.row][2]);
+		}
+		// kingside O-O
+		if (!board[target.row][7].has_moved)
+		{
+			if (board[target.row][6].piece == Piece::EMPTY && board[target.row][5].piece == Piece::EMPTY)
+				prospective_moves.push_back(board[target.row][6]);
 		}
 	}
 
