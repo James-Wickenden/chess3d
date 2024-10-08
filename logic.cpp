@@ -381,7 +381,9 @@ vector<Square> get_prospective_king_moves(Square target, vector<vector<Square>> 
 // Create a deep copy clone of an input chessboard
 vector<vector<Square>> deep_clone_board(vector<vector<Square>> original)
 {
-	vector<vector<Square>> copy;
+	vector<Square> row(DIM_SIZE);
+	vector<vector<Square>> copy(DIM_SIZE, row);
+
 	for (int row = 0; row < DIM_SIZE; row++)
 	{
 		for (int col = 0; col < DIM_SIZE; col++)
@@ -424,7 +426,7 @@ bool is_king_attacked(Square king, vector<vector<Square>> board, Colour opp_colo
 
 // Take the prospective moves and identify which ones can be made.
 // Prospective moves cannot be made if making the move would open up the king to being captured by another piece
-vector<Square> trimmed_valid_moves(Square target, vector<vector<Square>> board, Colour opp_colour, vector<Square> prospective_moves)
+vector<Square> trim_valid_moves(Square target, vector<vector<Square>> board, Colour opp_colour, vector<Square> prospective_moves)
 {
 	vector<Square> confirmed_moves;
 	// catch for the case where no prospective moves can be made
@@ -451,7 +453,8 @@ vector<Square> trimmed_valid_moves(Square target, vector<vector<Square>> board, 
 				if (board[row][col].piece == Piece::KING && board[row][col].colour == target.colour)
 				{
 					Square king = board[row][col];
-					if (!is_king_attacked(king, board, opp_colour)) confirmed_moves.push_back(target);
+					if (!is_king_attacked(king, test_board, opp_colour)) 
+						confirmed_moves.push_back(prosp_move);
 				}
 			}
 		}
@@ -491,9 +494,10 @@ vector<Square> Chessboard::find_valid_moves(Square target)
 		break;
 	}
 
-	//vector<Square> confirmed_moves = trimmed_valid_moves(target, board, opp_colour, prospective_moves);
-	this->valid_moves = prospective_moves;
-	return prospective_moves;
+	// take the list of prospective moves and reduce it to only valid ones
+	vector<Square> confirmed_moves = trim_valid_moves(target, board, opp_colour, prospective_moves);
+	this->valid_moves = confirmed_moves;
+	return confirmed_moves;
 }
 
 
