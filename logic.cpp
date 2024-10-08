@@ -515,30 +515,56 @@ void print_board(Chessboard chessboard)
 		std::cout << (char)('0' + (DIM_SIZE - i)) << ' ';
 		for (int j = 0; j < DIM_SIZE; j++)
 		{
-			// there are different cases for colouring the board: black tile, white tile, black piece, white piece, valid move, invalid move
-			// first, we colour the square, then draw the piece, then reset the colour
+			/*
+			there are different cases for colouring the board: black tile, white tile, black piece, white piece, valid move, invalid move
+			first, we colour the square, then draw the piece, then reset the colour
+
+						foreground background
+				black        30         40
+				red          31         41
+				green        32         42
+				yellow       33         43
+				blue         34         44
+				magenta      35         45
+				cyan         36         46
+				white        37         47
+			*/
+
+			string colourcode = "\033[";
+
+			// attacked squares
 			if (count(chessboard.valid_moves.begin(), chessboard.valid_moves.end(), chessboard.board[DIM_SIZE - (1 + i)][j]) > 0)
 			{
-				// colour tile yellow for attacked square
-				std::cout << "\033[43m";
+				colourcode += "43;"; // yellow bg
 			}
 			else
 			{
 				// colour tile black for black square, white for white square
 				switch ((i ^ j) & 1)
 				{
-					case 0: std::cout << "\033[40m";
-					case 1: std::cout << "\033[47m";
+					case 0: 
+						colourcode += "40;"; // black bg
+						break;
+					case 1: 
+						colourcode += "47;"; // white bg
+						break;
 				}
 			}
 
 			switch (chessboard.board[DIM_SIZE - (1 + i)][j].colour)
 			{
-				case Colour::WHITE: std::cout << "\033[31m";
-				case Colour::BLACK: std::cout << "\033[32m";
+				case Colour::WHITE: 
+					colourcode += "1;31m"; // red, bold fg
+					break;
+				case Colour::BLACK: 
+					colourcode += "1;35m"; // purple, bold fg
+					break;
+				case Colour::EMPTY:
+					colourcode += "1m";
+					break;
 			}
 
-			std::cout << piece_map[chessboard.board[DIM_SIZE - (1 + i)][j].piece] << "\033[0m";
+			std::cout << colourcode << piece_map[chessboard.board[DIM_SIZE - (1 + i)][j].piece] << "\033[0m";
 		}
 		std::cout << '\n';
 	}
