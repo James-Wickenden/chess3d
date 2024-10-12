@@ -8,17 +8,11 @@ https://github.com/James-Wickenden/chess3d
 
 ## Todo:
 
-
 - Parse model OBJs and MTLs into 3d space with openGL
 - Add camera controls w tutorial help with mouse/arrow key movement
 - Create the game logic for chess, based on building the incremental steps of a gameplay session:
-	- Moving pieces
-	- Finding all valid moves given a piece/board
-	- Detecting check
-	- Capturing pieces
 	- Storing moves as notation
-	- Advanced moves: en passant, castling
-	- Detecting checkmate
+	- Advanced moves: en passant
 - Undoing moves with a gamestate stack
 - Adding a PGN to the game window
 - Saving/loading games
@@ -28,14 +22,23 @@ https://github.com/James-Wickenden/chess3d
 ## In progress:
 
 - Create the game logic for chess, based on building the incremental steps of a gameplay session:
-	- Pieces
-	- Defining a board as a structure of pieces and empty squares
+	- Detecting check
+	- Detecting checkmate
+	- Detecting stalemate
+	- Preventing the king from moving into check
+	- Preventing castling through check
+	
 - Create low poly 3d chess models
 
 ## Completed:
 
 - Create the game logic for chess, based on building the incremental steps of a gameplay session:
 	- Board initiating
+	- Pieces
+	- Defining a board as a structure of pieces and empty squares
+	- Moving pieces
+	- Finding all valid moves given a piece/board
+	- Capturing pieces
 
 ---
 
@@ -100,3 +103,40 @@ A separate check for if the castling logic is permissible should be done here.
 
 - Run the prospective move making algorithm on every enemy piece and collate the results.
 If the king is targeted by any enemy piece, then making the prospective move would jeoparise the king and should be discarded.
+
+## On detecting check, checkmate and stalemate:
+
+- After each move we must make some checks to assess the state of the board.
+First, we must see if a move has been made that puts the opponent king in check.
+This can be done by using the king raytracing algorithm used to trim moves.
+
+- If the king is in check, we must then look for checkmate. Checkmate is the state where no moves can be made to prevent the king from being in check.
+So, the player cannot move the king to an unattacked square, capture the attacking piece, or move another piece in the way of the attack.
+
+- So, we build a list of possible moves to escape checkmate.
+	
+	- First: squares the king can move to. There is already logic for restricting the kings moves to only valid squares.
+
+	- Second: capturing the attacking piece. When detecting check, we must go through all the player's pieces and find ALL the pieces that are attacking the king.
+	  It is possible that moving a piece exposes another piece to attack the king while also attacking the king. 
+	  This is a double check, and in this case we do not proceed any further along this line as capturing the attacking piece does not stop the king being in check.
+	  Otherwise, store the attacking piece in the chessboard object and then look at all the checked player's pieces and see if any of them can capture the attacking piece.
+	  If so, add that move to the list of escaping moves.
+
+	- Third: squares the checked player's pieces can move to that block the check.
+	  This will have to be done by going through every possible move on a test board and looking for the check state.
+	  Code can be re-used here by defining a function to take a board and a colour and detecting check.
+
+Finally: if the list of possible moves is empty, we are in checkmate. Otherwise, allow the player to keep playing, and notify check.
+
+- If the king is not in check, we should instead look for stalemate after every move.
+Stalemate is the condition where a player cannot make any moves. It can occur when a player has multiple pieces on the board but none of them can be moved.
+For this, we go through every piece and compile a full list of valid moves. If the list is empty, then the player is in stalemate and the game ends in a draw.
+
+## On storing notation and the board:
+
+- After each move, the move is stored in PGN so the game can be transferred and replayed.
+  PGN does not store the state of the board, but each sequential move played. The entire game is captured through PGN.
+  
+- For undoing moves, it is simpler to also store a stack of game states containing the whole board.
+  This way, to undo a move we only have to pop the stack and set the board to that state rather than backtrack using the PGN.
