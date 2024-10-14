@@ -94,6 +94,24 @@ vector<Square> get_prospective_pawn_moves(Square target, vector<vector<Square>> 
 }
 
 
+void progress_rook_bishop_search(Square target, Square test_square, Colour opp_colour, vector<Square>* prospective_moves, bool* progress_search)
+{
+	if (test_square.colour == Colour::EMPTY)
+	{
+		(*prospective_moves).push_back(test_square);
+	}
+	else if (test_square.colour == opp_colour)
+	{
+		(*prospective_moves).push_back(test_square);
+		*progress_search = false;
+	}
+	else if (test_square.colour == target.colour)
+	{
+		*progress_search = false;
+	}
+}
+
+
 // For each cardinal direction outwards from the piece location, we:
 // progress forwards in the direction, adding all empty squares to the list of prospective moves
 // if we reach a non-empty square:
@@ -110,19 +128,7 @@ vector<Square> get_prospective_rook_moves(Square target, vector<vector<Square>> 
 		if ((target.row + i) >= DIM_SIZE) progress_search = false;
 		if (!progress_search) continue;
 		Square test_square = board[target.row + i][target.col];
-		if (test_square.colour == Colour::EMPTY)
-		{
-			prospective_moves.push_back(test_square);
-		}
-		else if (test_square.colour == opp_colour)
-		{
-			prospective_moves.push_back(test_square);
-			progress_search = false;
-		}
-		else if (test_square.colour == target.colour)
-		{
-			progress_search = false;
-		}
+		progress_rook_bishop_search(target, test_square, opp_colour, &prospective_moves, &progress_search);
 	}
 
 	// backwards
@@ -132,19 +138,7 @@ vector<Square> get_prospective_rook_moves(Square target, vector<vector<Square>> 
 		if ((target.row - i) < 0) progress_search = false;
 		if (!progress_search) continue;
 		Square test_square = board[target.row - i][target.col];
-		if (test_square.colour == Colour::EMPTY)
-		{
-			prospective_moves.push_back(test_square);
-		}
-		else if (test_square.colour == opp_colour)
-		{
-			prospective_moves.push_back(test_square);
-			progress_search = false;
-		}
-		else if (test_square.colour == target.colour)
-		{
-			progress_search = false;
-		}
+		progress_rook_bishop_search(target, test_square, opp_colour, &prospective_moves, &progress_search);
 	}
 
 	// left
@@ -154,19 +148,7 @@ vector<Square> get_prospective_rook_moves(Square target, vector<vector<Square>> 
 		if ((target.col + i) >= DIM_SIZE) progress_search = false;
 		if (!progress_search) continue;
 		Square test_square = board[target.row][target.col + i];
-		if (test_square.colour == Colour::EMPTY)
-		{
-			prospective_moves.push_back(test_square);
-		}
-		else if (test_square.colour == opp_colour)
-		{
-			prospective_moves.push_back(test_square);
-			progress_search = false;
-		}
-		else if (test_square.colour == target.colour)
-		{
-			progress_search = false;
-		}
+		progress_rook_bishop_search(target, test_square, opp_colour, &prospective_moves, &progress_search);
 	}
 
 	// right
@@ -176,19 +158,7 @@ vector<Square> get_prospective_rook_moves(Square target, vector<vector<Square>> 
 		if ((target.col - i) < 0) progress_search = false;
 		if (!progress_search) continue;
 		Square test_square = board[target.row][target.col - i];
-		if (test_square.colour == Colour::EMPTY)
-		{
-			prospective_moves.push_back(test_square);
-		}
-		else if (test_square.colour == opp_colour)
-		{
-			prospective_moves.push_back(test_square);
-			progress_search = false;
-		}
-		else if (test_square.colour == target.colour)
-		{
-			progress_search = false;
-		}
+		progress_rook_bishop_search(target, test_square, opp_colour, &prospective_moves, &progress_search);
 	}
 
 	return prospective_moves;
@@ -211,19 +181,7 @@ vector<Square> get_prospective_bishop_moves(Square target, vector<vector<Square>
 		if ((target.row + i) >= DIM_SIZE || (target.col + i) >= DIM_SIZE) progress_search = false;
 		if (!progress_search) continue;
 		Square test_square = board[target.row + i][target.col + i];
-		if (test_square.colour == Colour::EMPTY)
-		{
-			prospective_moves.push_back(test_square);
-		}
-		else if (test_square.colour == opp_colour)
-		{
-			prospective_moves.push_back(test_square);
-			progress_search = false;
-		}
-		else if (test_square.colour == target.colour)
-		{
-			progress_search = false;
-		}
+		progress_rook_bishop_search(target, test_square, opp_colour, &prospective_moves, &progress_search);
 	}
 
 	// down-right
@@ -233,19 +191,7 @@ vector<Square> get_prospective_bishop_moves(Square target, vector<vector<Square>
 		if ((target.row - i) < 0 || (target.col + i) >= DIM_SIZE) progress_search = false;
 		if (!progress_search) continue;
 		Square test_square = board[target.row - i][target.col + i];
-		if (test_square.colour == Colour::EMPTY)
-		{
-			prospective_moves.push_back(test_square);
-		}
-		else if (test_square.colour == opp_colour)
-		{
-			prospective_moves.push_back(test_square);
-			progress_search = false;
-		}
-		else if (test_square.colour == target.colour)
-		{
-			progress_search = false;
-		}
+		progress_rook_bishop_search(target, test_square, opp_colour, &prospective_moves, &progress_search);
 	}
 
 	// up-left
@@ -255,19 +201,7 @@ vector<Square> get_prospective_bishop_moves(Square target, vector<vector<Square>
 		if ((target.row + i) >= DIM_SIZE || (target.col - i) < 0) progress_search = false;
 		if (!progress_search) continue;
 		Square test_square = board[target.row + i][target.col - i];
-		if (test_square.colour == Colour::EMPTY)
-		{
-			prospective_moves.push_back(test_square);
-		}
-		else if (test_square.colour == opp_colour)
-		{
-			prospective_moves.push_back(test_square);
-			progress_search = false;
-		}
-		else if (test_square.colour == target.colour)
-		{
-			progress_search = false;
-		}
+		progress_rook_bishop_search(target, test_square, opp_colour, &prospective_moves, &progress_search);
 	}
 
 	// down-left
@@ -277,19 +211,7 @@ vector<Square> get_prospective_bishop_moves(Square target, vector<vector<Square>
 		if ((target.row - i) < 0 || (target.col - i) < 0) progress_search = false;
 		if (!progress_search) continue;
 		Square test_square = board[target.row - i][target.col - i];
-		if (test_square.colour == Colour::EMPTY)
-		{
-			prospective_moves.push_back(test_square);
-		}
-		else if (test_square.colour == opp_colour)
-		{
-			prospective_moves.push_back(test_square);
-			progress_search = false;
-		}
-		else if (test_square.colour == target.colour)
-		{
-			progress_search = false;
-		}
+		progress_rook_bishop_search(target, test_square, opp_colour, &prospective_moves, &progress_search);
 	}
 
 	return prospective_moves;
@@ -337,6 +259,7 @@ vector<Square> get_prospective_knight_moves(Square target, vector<vector<Square>
 
 	return prospective_moves;
 }
+
 
 
 // Look in the immediate 3x3 grid around the king and check for any empty or opponent-occupied squares.
@@ -407,7 +330,7 @@ bool is_king_attacked(Square king, vector<vector<Square>> board, Colour opp_colo
 	vector<Square> raycast_king_moves_orthogonal = get_prospective_rook_moves(king, board, opp_colour);
 	for (int i = 0; i < raycast_king_moves_orthogonal.size(); i++)
 	{
-		if (raycast_king_moves_orthogonal[i].piece == Piece::ROOK || 
+		if (raycast_king_moves_orthogonal[i].piece == Piece::ROOK ||
 			raycast_king_moves_orthogonal[i].piece == Piece::QUEEN)
 			return true;
 	}
@@ -415,7 +338,7 @@ bool is_king_attacked(Square king, vector<vector<Square>> board, Colour opp_colo
 	vector<Square> raycast_king_moves_diagonal = get_prospective_bishop_moves(king, board, opp_colour);
 	for (int i = 0; i < raycast_king_moves_diagonal.size(); i++)
 	{
-		if (raycast_king_moves_diagonal[i].piece == Piece::BISHOP || 
+		if (raycast_king_moves_diagonal[i].piece == Piece::BISHOP ||
 			raycast_king_moves_diagonal[i].piece == Piece::QUEEN)
 			return true;
 	}
@@ -453,7 +376,7 @@ vector<Square> trim_valid_moves(Square target, vector<vector<Square>> board, Col
 				if (board[row][col].piece == Piece::KING && board[row][col].colour == target.colour)
 				{
 					Square king = board[row][col];
-					if (!is_king_attacked(king, test_board, opp_colour)) 
+					if (!is_king_attacked(king, test_board, opp_colour))
 						confirmed_moves.push_back(prosp_move);
 				}
 			}
@@ -464,11 +387,10 @@ vector<Square> trim_valid_moves(Square target, vector<vector<Square>> board, Col
 }
 
 
-vector<Square> Chessboard::find_valid_moves(Square target)
+// For a given square, find all the moves that piece can move to
+vector<Square> get_valid_square_moves(Square target, vector<vector<Square>> board, Colour opp_colour)
 {
 	vector<Square> prospective_moves;
-	vector<vector<Square>> board = this->board;
-	Colour opp_colour = (target.colour == Colour::WHITE) ? Colour::BLACK : Colour::WHITE;
 
 	switch (target.piece)
 	{
@@ -496,6 +418,38 @@ vector<Square> Chessboard::find_valid_moves(Square target)
 
 	// take the list of prospective moves and reduce it to only valid ones
 	vector<Square> confirmed_moves = trim_valid_moves(target, board, opp_colour, prospective_moves);
+	return confirmed_moves;
+}
+
+
+// Go through the board and compile a list of all the squares a player is currently targeting
+vector<Square> find_all_attackable_squares(vector<vector<Square>> board, Colour colour)
+{
+	vector<Square> result;
+	Colour opp_colour = (colour == Colour::WHITE) ? Colour::BLACK : Colour::WHITE;
+
+	for (int row = 0; row < DIM_SIZE; row++)
+	{
+		for (int col = 0; col < DIM_SIZE; col++)
+		{
+			if (board[row][col].colour == colour)
+			{
+				vector<Square> confirmed_moves = get_valid_square_moves(board[row][col], board, opp_colour);
+			}
+		}
+	}
+
+	return result;
+}
+
+
+vector<Square> Chessboard::find_valid_moves(Square target)
+{
+	vector<Square> prospective_moves;
+	vector<vector<Square>> board = this->board;
+	Colour opp_colour = (target.colour == Colour::WHITE) ? Colour::BLACK : Colour::WHITE;
+
+	vector<Square> confirmed_moves = get_valid_square_moves(target, board, opp_colour);
 	this->valid_moves = confirmed_moves;
 	return confirmed_moves;
 }
