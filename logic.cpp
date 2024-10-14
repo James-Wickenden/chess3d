@@ -425,7 +425,7 @@ vector<Square> get_valid_square_moves(Square target, vector<vector<Square>> boar
 // Go through the board and compile a list of all the squares a player is currently targeting
 vector<Square> find_all_attackable_squares(vector<vector<Square>> board, Colour colour)
 {
-	vector<Square> result;
+	vector<Square> all_attackable_squares;
 	Colour opp_colour = (colour == Colour::WHITE) ? Colour::BLACK : Colour::WHITE;
 
 	for (int row = 0; row < DIM_SIZE; row++)
@@ -434,15 +434,20 @@ vector<Square> find_all_attackable_squares(vector<vector<Square>> board, Colour 
 		{
 			if (board[row][col].colour == colour)
 			{
-				vector<Square> confirmed_moves = get_valid_square_moves(board[row][col], board, opp_colour);
+				//if (board[row][col].piece == Piece::KING) continue;
+				vector<Square> confirmed_piece_moves = get_valid_square_moves(board[row][col], board, opp_colour);
+				all_attackable_squares.insert(all_attackable_squares.end(), confirmed_piece_moves.begin(), confirmed_piece_moves.end());
 			}
 		}
 	}
 
-	return result;
+	return all_attackable_squares;
 }
 
 
+// For a given piece, find all the squares that piece can move to.
+// Doesn't include illegal moves, moves that would put the king in check, etc.
+// Includes special moves i.e. castling, en passant.
 vector<Square> Chessboard::find_valid_moves(Square target)
 {
 	vector<Square> prospective_moves;
@@ -455,6 +460,7 @@ vector<Square> Chessboard::find_valid_moves(Square target)
 }
 
 
+// Print a coloured board to the console.
 void print_board(Chessboard chessboard)
 {
 	map<Piece, char> piece_map = {
@@ -585,6 +591,7 @@ Chessboard::Chessboard()
 }
 
 
+// Given two coordinates, return a string of the board coordinates for that square.
 string convert_int_to_chessboard_square(int row, int col)
 {
 	string res = "";
@@ -594,6 +601,7 @@ string convert_int_to_chessboard_square(int row, int col)
 }
 
 
+// Give a string of the board coordinates, return the two coordinates for that square.
 vector<int> convert_chessboard_square_to_int(string position)
 {
 	vector<int> res;
@@ -603,6 +611,7 @@ vector<int> convert_chessboard_square_to_int(string position)
 }
 
 
+// Main game loop
 void loop_board(Chessboard cb)
 {
 	while(true)
@@ -657,5 +666,4 @@ int main()
 {
 	Chessboard cb = Chessboard();
 	loop_board(cb);
-	
 }
