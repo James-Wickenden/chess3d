@@ -49,6 +49,26 @@ bool Square::operator!=(const Square rhs) const
 }
 
 
+// Find the two diagonal squares the pawn can capture on
+vector<Square> get_pawn_attacking_squares(Square target, vector<vector<Square>> board, Colour opp_colour, int dir, bool assume_king)
+{
+	vector<Square> pawn_attacking_squares;
+
+	if (target.col > 0) {
+		if (board[target.row + dir][target.col - 1].colour == opp_colour || assume_king) {
+			pawn_attacking_squares.push_back(board[target.row + dir][target.col - 1]);
+		}
+	}
+	if (target.col < 7) {
+		if (board[target.row + dir][target.col + 1].colour == opp_colour || assume_king) {
+			pawn_attacking_squares.push_back(board[target.row + dir][target.col + 1]);
+		}
+	}
+
+	return pawn_attacking_squares;
+}
+
+
 vector<Square> get_prospective_pawn_moves(Square target, vector<vector<Square>> board, Colour opp_colour)
 {
 	vector<Square> prospective_moves;
@@ -74,16 +94,8 @@ vector<Square> get_prospective_pawn_moves(Square target, vector<vector<Square>> 
 		}
 
 		// in the case where there is an opposite-coloured piece diagonally in front of the pawn: that piece is capturable
-		if (target.col > 0) {
-			if (board[target.row + dir][target.col - 1].colour == opp_colour) {
-				prospective_moves.push_back(board[target.row + dir][target.col - 1]);
-			}
-		}
-		if (target.col < 7) {
-			if (board[target.row + dir][target.col + 1].colour == opp_colour) {
-				prospective_moves.push_back(board[target.row + dir][target.col + 1]);
-			}
-		}
+		vector<Square> pawn_attacking_Squares = get_pawn_attacking_squares(target, board, opp_colour, dir, false);
+		prospective_moves.insert(prospective_moves.end(), pawn_attacking_Squares.begin(), pawn_attacking_Squares.end());
 	}
 
 	//todo: en passant prospective move
@@ -261,12 +273,12 @@ vector<Square> get_prospective_knight_moves(Square target, vector<vector<Square>
 }
 
 
-
 // Look in the immediate 3x3 grid around the king and check for any empty or opponent-occupied squares.
 // Then check for castling opportunies
 vector<Square> get_prospective_king_moves(Square target, vector<vector<Square>> board, Colour opp_colour)
 {
 	vector<Square> prospective_moves;
+	vector<Square> all_enemy_attacking_squares = find_all_attackable_squares(board, opp_colour);
 
 	for (int i = -1; i <= 1; i++)
 	{
@@ -276,7 +288,12 @@ vector<Square> get_prospective_king_moves(Square target, vector<vector<Square>> 
 				continue;
 
 			Square test_square = board[target.row + i][target.col + j];
+
+			// skip the king and prevent the king moving next to another king
 			if (test_square.piece == Piece::KING) continue;
+			// the king cannot move into an attacked square
+			if (count(all_enemy_attacking_squares.begin(), all_enemy_attacking_squares.end(), test_square) > 0) continue;
+
 			if (test_square.colour == Colour::EMPTY || test_square.colour == opp_colour) prospective_moves.push_back(test_square);
 		}
 	}
@@ -423,7 +440,7 @@ vector<Square> get_valid_square_moves(Square target, vector<vector<Square>> boar
 
 
 // Go through the board and compile a list of all the squares a player is currently targeting
-vector<Square> find_all_attackable_squares(vector<vector<Square>> board, Colour colour)
+vector<Square> LogicEngine::find_all_attackable_squares(vector<vector<Square>> board, Colour colour)
 {
 	vector<Square> all_attackable_squares;
 	Colour opp_colour = (colour == Colour::WHITE) ? Colour::BLACK : Colour::WHITE;
@@ -434,9 +451,25 @@ vector<Square> find_all_attackable_squares(vector<vector<Square>> board, Colour 
 		{
 			if (board[row][col].colour == colour)
 			{
-				//if (board[row][col].piece == Piece::KING) continue;
-				vector<Square> confirmed_piece_moves = get_valid_square_moves(board[row][col], board, opp_colour);
-				all_attackable_squares.insert(all_attackable_squares.end(), confirmed_piece_moves.begin(), confirmed_piece_moves.end());
+				vector<Square> confirmed_piece_moves;
+				int dir = (board[row][col].colour == Colour::WHITE) ? 1 : -1;
+				switch (board[row][col].piece)
+				{
+					// Skip over the king. We already catch it in the king prospective move function and it would recurse infinitely.
+					case Piece::KING:
+						continue;
+						break;
+					// Pawns are handled separately since they cannot attack the same squares they can move to.
+					case Piece::PAWN:
+						confirmed_piece_moves = get_pawn_attacking_squares(board[row][col], board, opp_colour, dir, true);
+						all_attackable_squares.insert(all_attackable_squares.end(), confirmed_piece_moves.begin(), confirmed_piece_moves.end());
+						break;
+					// For other pieces: we find their moves and add them to the list.
+					default:
+						confirmed_piece_moves = get_valid_square_moves(board[row][col], board, opp_colour);
+						all_attackable_squares.insert(all_attackable_squares.end(), confirmed_piece_moves.begin(), confirmed_piece_moves.end());
+						break;
+				}
 			}
 		}
 	}

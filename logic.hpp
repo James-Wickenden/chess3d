@@ -60,5 +60,8 @@ namespace LogicEngine
 
         std::vector<Square> find_valid_moves(Square target);
         Chessboard();
+
     };
+
+    std::vector<Square> find_all_attackable_squares(std::vector<std::vector<Square>> board, Colour colour);
 }
