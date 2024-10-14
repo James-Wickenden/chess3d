@@ -478,6 +478,49 @@ vector<Square> LogicEngine::find_all_attackable_squares(vector<vector<Square>> b
 }
 
 
+// Go through the move making procedure. Assume from prior checks that the move is valid.
+// 1. Make the move, storing the details of the moved piece and destination square
+// 2. Look for check, checkmate and stalemate.
+// 3. Build the PGN string for the move.
+// 4. Update the active player's turn
+void make_move(Chessboard* cb, vector<Square> valid_piece_moves, vector<int> target_position, vector<int> destination_position)
+{
+	Colour colour = cb->board[target_position[0]][target_position[1]].colour;
+	Colour opp_colour = (colour == Colour::WHITE) ? Colour::BLACK : Colour::WHITE;
+
+	// 1. Make the move
+	for (int i = 0; i < valid_piece_moves.size(); i++)
+	{
+		if (valid_piece_moves[i].row == destination_position[0] && valid_piece_moves[i].col == destination_position[1])
+		{
+			// move the piece
+			cb->board[destination_position[0]][destination_position[1]].piece = cb->board[target_position[0]][target_position[1]].piece;
+			cb->board[destination_position[0]][destination_position[1]].colour = cb->board[target_position[0]][target_position[1]].colour;
+			cb->board[destination_position[0]][destination_position[1]].has_moved = true;
+
+			cb->board[target_position[0]][target_position[1]] = Square(target_position[0], target_position[1]);
+			break;
+		}
+	}
+
+	// Find the valid move lists for each player
+	(*cb).valid_moves[Colour::WHITE] = find_all_attackable_squares(cb->board, Colour::WHITE);
+	(*cb).valid_moves[Colour::BLACK] = find_all_attackable_squares(cb->board, Colour::BLACK);
+
+	//2. Look for check, checkmate and stalemate
+	for (int i = 0; i < (*cb).valid_moves[colour].size(); i++)
+	{
+		if ((*cb).valid_moves[colour][i].piece == Piece::KING)
+		{
+			// The opponent king is in check.
+			cout << "check\n";
+		}
+	}
+
+	cb->active_player = opp_colour;
+}
+
+
 // For a given piece, find all the squares that piece can move to.
 // Doesn't include illegal moves, moves that would put the king in check, etc.
 // Includes special moves i.e. castling, en passant.
@@ -488,13 +531,12 @@ vector<Square> Chessboard::find_valid_moves(Square target)
 	Colour opp_colour = (target.colour == Colour::WHITE) ? Colour::BLACK : Colour::WHITE;
 
 	vector<Square> confirmed_moves = get_valid_square_moves(target, board, opp_colour);
-	this->valid_moves = confirmed_moves;
 	return confirmed_moves;
 }
 
 
 // Print a coloured board to the console.
-void print_board(Chessboard chessboard)
+void print_board(Chessboard chessboard, vector<Square> valid_moves)
 {
 	map<Piece, char> piece_map = {
 		{ Piece::EMPTY,  ' ' },
@@ -506,10 +548,10 @@ void print_board(Chessboard chessboard)
 		{ Piece::KING,   'K' }
 	};
 
-	std::cout << "Current board : \n\n";
+	cout << "Current board : \n\n";
 	for (int i = 0; i < DIM_SIZE; i++)
 	{
-		std::cout << (char)('0' + (DIM_SIZE - i)) << ' ';
+		cout << (char)('0' + (DIM_SIZE - i)) << ' ';
 		for (int j = 0; j < DIM_SIZE; j++)
 		{
 			/*
@@ -530,7 +572,7 @@ void print_board(Chessboard chessboard)
 			string colourcode = "\033[";
 
 			// attacked squares
-			if (count(chessboard.valid_moves.begin(), chessboard.valid_moves.end(), chessboard.board[DIM_SIZE - (1 + i)][j]) > 0)
+			if (count(valid_moves.begin(), valid_moves.end(), chessboard.board[DIM_SIZE - (1 + i)][j]) > 0)
 			{
 				colourcode += "43;"; // yellow bg
 			}
@@ -561,11 +603,12 @@ void print_board(Chessboard chessboard)
 					break;
 			}
 
-			std::cout << colourcode << piece_map[chessboard.board[DIM_SIZE - (1 + i)][j].piece] << "\033[0m";
+			cout << colourcode << piece_map[chessboard.board[DIM_SIZE - (1 + i)][j].piece] << "\033[0m";
 		}
-		std::cout << '\n';
+		cout << '\n';
 	}
-	std::cout << "\n  abcdefgh\n\n";
+	cout << "\n  abcdefgh\n\n";
+	cout << "\033[1;32m" << (chessboard.active_player == Colour::WHITE ? "WHITE" : "BLACK") << " TO MOVE\033[0m\n\n";
 	return;
 }
 
@@ -587,6 +630,7 @@ Chessboard::Chessboard()
 
 	vector<Square> row(DIM_SIZE);
 	vector<vector<Square>> b(DIM_SIZE, row);
+	active_player = Colour::WHITE;
 
 	board = b;
 	for (int i=0; i < DIM_SIZE; i++)
@@ -649,46 +693,42 @@ void loop_board(Chessboard cb)
 {
 	while(true)
 	{
-		print_board(cb);
+		print_board(cb, vector<Square>());
 
 		// first select the piece to move and get a list of the squares the piece can move to
 		string target_square, destination_square;
-		std::cout << "Input target square: ";
+		cout << "Input target square: ";
 		getline(cin, target_square);
 
 		vector<int> target_position = convert_chessboard_square_to_int(target_square);
+		if (cb.board[target_position[0]][target_position[1]].colour != cb.active_player)
+		{
+			cout << "\x1B[2J\x1B[H";
+			cout << "\033[1;31mInvalid piece selected\033[0m\n";
+			continue;
+		}
 
-		std::cout << "Moves: ";
+		// find and print the list of moves from that square's piece
+		cout << "\x1B[2J\x1B[H";
+		cout << "Moves: ";
 		vector<Square> vms = cb.find_valid_moves(cb.board[target_position[0]][target_position[1]]);
 		for (int i = 0; i < vms.size(); i++)
 		{
-			std::cout << convert_int_to_chessboard_square(vms[i].col, vms[i].row) << ' ';
+			cout << convert_int_to_chessboard_square(vms[i].col, vms[i].row) << ' ';
 		}
-		std::cout << '\n';
+		cout << '\n';
 
-		print_board(cb);
+		print_board(cb, vms);
 
-		// then get the square to move to, and if on the list, make the move
-		std::cout << "\nChoose destination square: ";
+		// then get the square to move to, and if on the list, we can make the move
+		cout << "\nChoose destination square: ";
 		getline(cin, destination_square);
 		if (destination_square == "") continue;
 
 		vector<int> destination_position = convert_chessboard_square_to_int(destination_square);
 
-		for (int i = 0; i < vms.size(); i++)
-		{
-			if (vms[i].row == destination_position[0] && vms[i].col == destination_position[1])
-			{
-				// move the piece
-				cb.board[destination_position[0]][destination_position[1]].piece = cb.board[target_position[0]][target_position[1]].piece;
-				cb.board[destination_position[0]][destination_position[1]].colour = cb.board[target_position[0]][target_position[1]].colour;
-				cb.board[destination_position[0]][destination_position[1]].has_moved = true;
-
-				cb.board[target_position[0]][target_position[1]] = Square(target_position[0], target_position[1]);
-			}
-		}
-
-		cb.valid_moves = vector<Square>();
+		// finally: make the move
+		make_move(&cb, vms, target_position, destination_position);
 	}
 
 	return;

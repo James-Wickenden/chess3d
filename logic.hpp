@@ -54,13 +54,11 @@ namespace LogicEngine
     {
     public:
         std::vector<std::vector<Square>> board;
-
-        Square selected_square;
-        std::vector<Square> valid_moves;
+        std::map<Colour, std::vector<Square>> valid_moves;
+        Colour active_player;
 
         std::vector<Square> find_valid_moves(Square target);
         Chessboard();
-
     };
 
     std::vector<Square> find_all_attackable_squares(std::vector<std::vector<Square>> board, Colour colour);
