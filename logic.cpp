@@ -273,12 +273,26 @@ vector<Square> get_prospective_knight_moves(Square target, vector<vector<Square>
 }
 
 
+// Take a vector<tuple<Square, vector<Square>>> object of the attackable squares and reduce it to a vector of the attacked squares
+vector<Square> parse_attackable_squares(vector<tuple<Square, vector<Square>>> attackable_squares)
+{
+	vector<Square> result;
+	for (int i = 0; i < attackable_squares.size(); i++)
+	{
+		vector<Square> selected_piece_attacked_squares = get<1>(attackable_squares[i]);
+		result.insert(result.end(), selected_piece_attacked_squares.begin(), selected_piece_attacked_squares.end());
+	}
+
+	return result;
+}
+
+
 // Look in the immediate 3x3 grid around the king and check for any empty or opponent-occupied squares.
 // Then check for castling opportunies
 vector<Square> get_prospective_king_moves(Square target, vector<vector<Square>> board, Colour opp_colour)
 {
 	vector<Square> prospective_moves;
-	vector<Square> all_enemy_attacking_squares = find_all_attackable_squares(board, opp_colour);
+	vector<Square> all_enemy_attacking_squares = parse_attackable_squares(find_all_attackable_squares(board, opp_colour, true));
 
 	for (int i = -1; i <= 1; i++)
 	{
@@ -440,9 +454,9 @@ vector<Square> get_valid_square_moves(Square target, vector<vector<Square>> boar
 
 
 // Go through the board and compile a list of all the squares a player is currently targeting
-vector<Square> LogicEngine::find_all_attackable_squares(vector<vector<Square>> board, Colour colour)
+vector<tuple<Square, vector<Square>>> LogicEngine::find_all_attackable_squares(vector<vector<Square>> board, Colour colour, bool assume_king)
 {
-	vector<Square> all_attackable_squares;
+	vector<tuple<Square, vector<Square>>> all_attackable_squares;
 	Colour opp_colour = (colour == Colour::WHITE) ? Colour::BLACK : Colour::WHITE;
 
 	for (int row = 0; row < DIM_SIZE; row++)
@@ -451,7 +465,7 @@ vector<Square> LogicEngine::find_all_attackable_squares(vector<vector<Square>> b
 		{
 			if (board[row][col].colour == colour)
 			{
-				vector<Square> confirmed_piece_moves;
+				tuple<Square, vector<Square>> confirmed_piece_moves;
 				int dir = (board[row][col].colour == Colour::WHITE) ? 1 : -1;
 				switch (board[row][col].piece)
 				{
@@ -461,13 +475,13 @@ vector<Square> LogicEngine::find_all_attackable_squares(vector<vector<Square>> b
 						break;
 					// Pawns are handled separately since they cannot attack the same squares they can move to.
 					case Piece::PAWN:
-						confirmed_piece_moves = get_pawn_attacking_squares(board[row][col], board, opp_colour, dir, true);
-						all_attackable_squares.insert(all_attackable_squares.end(), confirmed_piece_moves.begin(), confirmed_piece_moves.end());
+						confirmed_piece_moves = { board[row][col], get_pawn_attacking_squares(board[row][col], board, opp_colour, dir, assume_king) };
+						all_attackable_squares.push_back(confirmed_piece_moves);
 						break;
 					// For other pieces: we find their moves and add them to the list.
 					default:
-						confirmed_piece_moves = get_valid_square_moves(board[row][col], board, opp_colour);
-						all_attackable_squares.insert(all_attackable_squares.end(), confirmed_piece_moves.begin(), confirmed_piece_moves.end());
+						confirmed_piece_moves = { board[row][col], get_valid_square_moves(board[row][col], board, opp_colour) };
+						all_attackable_squares.push_back(confirmed_piece_moves);
 						break;
 				}
 			}
@@ -475,6 +489,18 @@ vector<Square> LogicEngine::find_all_attackable_squares(vector<vector<Square>> b
 	}
 
 	return all_attackable_squares;
+}
+
+
+// If in check, test for checkmate.
+// We look at every possible move the checked player can make.
+// If the list is empty, the player is checkmated.
+bool test_for_checkmate(Chessboard* cb, Colour player, Colour opp_colour)
+{
+	cout << (*cb).valid_moves[opp_colour].size() << '\n';
+	vector<Square> potential_moves = parse_attackable_squares((*cb).valid_moves[player]);
+	
+	return false;
 }
 
 
@@ -504,19 +530,25 @@ void make_move(Chessboard* cb, vector<Square> valid_piece_moves, vector<int> tar
 	}
 
 	// Find the valid move lists for each player
-	(*cb).valid_moves[Colour::WHITE] = find_all_attackable_squares(cb->board, Colour::WHITE);
-	(*cb).valid_moves[Colour::BLACK] = find_all_attackable_squares(cb->board, Colour::BLACK);
+	(*cb).valid_moves[Colour::WHITE] = find_all_attackable_squares(cb->board, Colour::WHITE, false);
+	(*cb).valid_moves[Colour::BLACK] = find_all_attackable_squares(cb->board, Colour::BLACK, false);
 
 	//2. Look for check, checkmate and stalemate
-	for (int i = 0; i < (*cb).valid_moves[colour].size(); i++)
+	vector<Square> attackable_squares = parse_attackable_squares((*cb).valid_moves[colour]);
+	for (int i = 0; i < attackable_squares.size(); i++)
 	{
-		if ((*cb).valid_moves[colour][i].piece == Piece::KING)
+		if (attackable_squares[i].piece == Piece::KING)
 		{
 			// The opponent king is in check.
-			cout << "check\n";
+			// We already restrict the player's moves once in check to those that escape check.
+			// We must however look for checkmate.
+			cout << "\033[1;33mThe king is in check\033[0m\n";
+			test_for_checkmate(cb, opp_colour, colour);
 		}
 	}
 
+
+	// At the end of the move, the active player colour is switched.
 	cb->active_player = opp_colour;
 }
 
@@ -610,6 +642,24 @@ void print_board(Chessboard chessboard, vector<Square> valid_moves)
 	cout << "\n  abcdefgh\n\n";
 	cout << "\033[1;32m" << (chessboard.active_player == Colour::WHITE ? "WHITE" : "BLACK") << " TO MOVE\033[0m\n\n";
 	return;
+}
+
+
+Chessboard::Chessboard(string start_position)
+{
+	vector<Square> row(DIM_SIZE);
+	vector<vector<Square>> b(DIM_SIZE, row);
+	active_player = Colour::WHITE;
+
+	board = b;
+
+	for (int i = 0; i < DIM_SIZE; i++)
+	{
+		for (int j = 0; j < DIM_SIZE; j++)
+		{
+			
+		}
+	}
 }
 
 
