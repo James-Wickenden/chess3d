@@ -769,6 +769,7 @@ void loop_board(Chessboard cb)
 
 int main()
 {
-	Chessboard cb = Chessboard();
+	//Chessboard cb = Chessboard();
+	Chessboard cb = Chessboard("test_position.txt");
 	loop_board(cb);
 }
