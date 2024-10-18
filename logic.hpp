@@ -9,6 +9,7 @@
 #include <string>
 #include <algorithm>
 #include <tuple>
+#include <fstream>
 
 namespace LogicEngine 
 {
@@ -60,7 +61,7 @@ namespace LogicEngine
         std::vector<Square> find_valid_moves(Square target);
 
         Chessboard(std::string start_position);
-        Chessboard();
+        Chessboard() : Chessboard("starting_position.txt") {};
     };
 
     std::vector<std::tuple<Square, std::vector<Square>>> 

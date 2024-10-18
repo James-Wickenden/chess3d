@@ -645,72 +645,54 @@ void print_board(Chessboard chessboard, vector<Square> valid_moves)
 }
 
 
-Chessboard::Chessboard(string start_position)
+// Take in a string for a text file, read the board, remove newline characters, and return it
+string read_board_setup_file(string filename)
 {
-	vector<Square> row(DIM_SIZE);
-	vector<vector<Square>> b(DIM_SIZE, row);
-	active_player = Colour::WHITE;
-
-	board = b;
-
-	for (int i = 0; i < DIM_SIZE; i++)
+	string path_to_file = "C:/Users/James/source/repos/chess3d/";
+	std::ifstream file(path_to_file + filename);
+	std::string line;
+	std::string file_contents;
+	while (getline(file, line))
 	{
-		for (int j = 0; j < DIM_SIZE; j++)
-		{
-			
-		}
+		file_contents += line;
 	}
+
+	return file_contents;
 }
 
 
-Chessboard::Chessboard()
+Chessboard::Chessboard(string filename)
 {
-	/* Generate a new board that should look as follows :
-	
-	RNBQKBNR
-	PPPPPPPP
-	________
-	________
-	________
-	________
-	PPPPPPPP
-	RNBQKBNR
+	string setup_position = read_board_setup_file(filename);
 
-	*/
+	map<char, tuple<Piece, Colour>> piece_map = {
+		{ '_', {Piece::EMPTY,  Colour::EMPTY }},
+		{ 'P', {Piece::PAWN,   Colour::WHITE }},
+		{ 'R', {Piece::ROOK,   Colour::WHITE }},
+		{ 'N', {Piece::KNIGHT, Colour::WHITE }},
+		{ 'B', {Piece::BISHOP, Colour::WHITE }},
+		{ 'Q', {Piece::QUEEN,  Colour::WHITE }},
+		{ 'K', {Piece::KING,   Colour::WHITE }},
+		{ 'p', {Piece::PAWN,   Colour::BLACK }},
+		{ 'r', {Piece::ROOK,   Colour::BLACK }},
+		{ 'n', {Piece::KNIGHT, Colour::BLACK }},
+		{ 'b', {Piece::BISHOP, Colour::BLACK }},
+		{ 'q', {Piece::QUEEN,  Colour::BLACK }},
+		{ 'k', {Piece::KING,   Colour::BLACK }}
+	};
 
 	vector<Square> row(DIM_SIZE);
 	vector<vector<Square>> b(DIM_SIZE, row);
 	active_player = Colour::WHITE;
 
 	board = b;
-	for (int i=0; i < DIM_SIZE; i++)
-	{
-		board[1][i].piece = Piece::PAWN;
-		board[1][i].colour = Colour::WHITE;
-
-		board[6][i].piece = Piece::PAWN;
-		board[6][i].colour = Colour::BLACK;
-
-		board[0][i].colour = Colour::WHITE;
-		board[7][i].colour = Colour::BLACK;
-	}
-
-	for (int i = 0; i < DIM_SIZE; i += 7)
-	{
-		board[i][0].piece = Piece::ROOK;
-		board[i][1].piece = Piece::KNIGHT;
-		board[i][2].piece = Piece::BISHOP;
-		board[i][3].piece = Piece::QUEEN;
-		board[i][4].piece = Piece::KING;
-		board[i][5].piece = Piece::BISHOP;
-		board[i][6].piece = Piece::KNIGHT;
-		board[i][7].piece = Piece::ROOK;
-	}
 
 	for (int i = 0; i < DIM_SIZE; i++)
 	{
 		for (int j = 0; j < DIM_SIZE; j++)
 		{
+			board[i][j].piece =  get<0>(piece_map[setup_position[((DIM_SIZE - (i + 1)) * DIM_SIZE) + j]]);
+			board[i][j].colour = get<1>(piece_map[setup_position[((DIM_SIZE - (i + 1)) * DIM_SIZE) + j]]);
 			board[i][j].row = i;
 			board[i][j].col = j;
 		}
