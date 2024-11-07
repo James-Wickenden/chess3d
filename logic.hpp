@@ -31,6 +31,14 @@ namespace LogicEngine
         KING
     };
 
+    enum class Gamestate
+    {
+        NORMAL,
+        CHECK,
+        CHECKMATE,
+        STALEMATE
+    };
+
     // Define a square. A square can be empty or occupied by a piece
     class Square
     {

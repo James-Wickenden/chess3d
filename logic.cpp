@@ -459,7 +459,6 @@ vector<Square> trim_valid_moves(Square target, vector<vector<Square>> board, Col
 	return confirmed_moves;
 }
 
-
 // For a given square, find all the moves that piece can move to
 vector<Square> get_valid_square_moves(Square target, Chessboard chessboard, Colour opp_colour)
 {
@@ -532,21 +531,22 @@ vector<tuple<Square, vector<Square>>> LogicEngine::find_all_attackable_squares(C
 }
 
 
-// If in check, test for checkmate.
-// We look at every possible move the checked player can make.
+// Test for checkmate and stalemate.
+// We look at every possible move a checked player can make.
 // If the list is empty, the player is checkmated.
-bool test_for_checkmate(Chessboard* cb, Colour player, Colour opp_colour)
+// If the player is not in check, the game ends in stalemate.
+bool test_for_checkmate_stalemate(Chessboard* cb, Colour player, Colour opp_colour)
 {
 	vector<Square> potential_moves = parse_attackable_squares((*cb).valid_moves[player]);
 	
 	cout << "Number of valid moves: " << potential_moves.size() << "\nValid moves are: ";
 	for (int i = 0; i < potential_moves.size(); i++)
 	{
-		cout << convert_int_to_chessboard_square(potential_moves[i].row, potential_moves[i].col) << ' ';
+		cout << convert_int_to_chessboard_square(potential_moves[i].col, potential_moves[i].row) << ' ';
 	}
 	cout << '\n';
 
-	return false;
+	return potential_moves.size() == 0;
 }
 
 
@@ -555,7 +555,8 @@ bool test_for_checkmate(Chessboard* cb, Colour player, Colour opp_colour)
 // 2. Look for check, checkmate and stalemate.
 // 3. Build the PGN string for the move.
 // 4. Update the active player's turn
-void make_move(Chessboard* cb, vector<Square> valid_piece_moves, vector<int> target_position, vector<int> destination_position)
+// 5. Return a gamestate depending on the state of the game
+Gamestate make_move(Chessboard* cb, vector<Square> valid_piece_moves, vector<int> target_position, vector<int> destination_position)
 {
 	Colour colour = cb->board[target_position[0]][target_position[1]].colour;
 	Colour opp_colour = (colour == Colour::WHITE) ? Colour::BLACK : Colour::WHITE;
@@ -581,6 +582,7 @@ void make_move(Chessboard* cb, vector<Square> valid_piece_moves, vector<int> tar
 
 	//2. Look for check, checkmate and stalemate
 	vector<Square> attackable_squares = parse_attackable_squares((*cb).valid_moves[colour]);
+	bool is_check = false;
 	for (int i = 0; i < attackable_squares.size(); i++)
 	{
 		if (attackable_squares[i].piece == Piece::KING)
@@ -588,14 +590,21 @@ void make_move(Chessboard* cb, vector<Square> valid_piece_moves, vector<int> tar
 			// The opponent king is in check.
 			// We already restrict the player's moves once in check to those that escape check.
 			// We must however look for checkmate.
-			cout << "\033[1;33mThe king is in check\033[0m\n";
-			test_for_checkmate(cb, opp_colour, colour);
+			is_check = true;
+			bool is_checkmate = test_for_checkmate_stalemate(cb, opp_colour, colour);
+			if (is_checkmate) return Gamestate::CHECKMATE;
 		}
 	}
-
+	if (!is_check)
+	{
+		bool is_stalemate = test_for_checkmate_stalemate(cb, opp_colour, colour);
+		if (is_stalemate) return Gamestate::STALEMATE;
+	}
 
 	// At the end of the move, the active player colour is switched.
 	cb->active_player = opp_colour;
+	if (is_check) return Gamestate::CHECK;
+	return Gamestate::NORMAL;
 }
 
 
@@ -786,7 +795,25 @@ void loop_board(Chessboard cb)
 		vector<int> destination_position = convert_chessboard_square_to_int(destination_square);
 
 		// finally: make the move
-		make_move(&cb, vms, target_position, destination_position);
+		Gamestate gs = make_move(&cb, vms, target_position, destination_position);
+
+		// Handle the result of making the move
+		string winner;
+		switch (gs)
+		{
+			case Gamestate::CHECK:
+				cout << "\033[1;33mThe king is in check\033[0m\n";
+				break;
+			case Gamestate::CHECKMATE:
+				winner = (cb.active_player == Colour::WHITE) ? "Black" : "White";
+				cout << "\033[1;33mThe king is checkmated! Game over. " << winner << " wins!\033[0m\n";
+				print_board(cb, vector<Square>());
+				return;
+			case Gamestate::STALEMATE:
+				cout << "\033[1;33mIts a stalemate! Game ends in a tie.\033[0m\n";
+				print_board(cb, vector<Square>());
+				return;
+		}
 	}
 
 	return;
