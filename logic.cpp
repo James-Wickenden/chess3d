@@ -49,6 +49,26 @@ bool Square::operator!=(const Square rhs) const
 }
 
 
+// Given two coordinates, return a string of the board coordinates for that square.
+string convert_int_to_chessboard_square(int row, int col)
+{
+	string res = "";
+	res += ('a' + row);
+	res += ('1' + col);
+	return res;
+}
+
+
+// Give a string of the board coordinates, return the two coordinates for that square.
+vector<int> convert_chessboard_square_to_int(string position)
+{
+	vector<int> res;
+	res.push_back(position[1] - '1');
+	res.push_back(position[0] - 'a');
+	return res;
+}
+
+
 // Find the two diagonal squares the pawn can capture on
 vector<Square> get_pawn_attacking_squares(Square target, vector<vector<Square>> board, Colour opp_colour, int dir, bool assume_king)
 {
@@ -514,9 +534,15 @@ vector<tuple<Square, vector<Square>>> LogicEngine::find_all_attackable_squares(v
 // If the list is empty, the player is checkmated.
 bool test_for_checkmate(Chessboard* cb, Colour player, Colour opp_colour)
 {
-	cout << (*cb).valid_moves[opp_colour].size() << '\n';
 	vector<Square> potential_moves = parse_attackable_squares((*cb).valid_moves[player]);
 	
+	cout << "Number of valid moves: " << potential_moves.size() << "\nValid moves are: ";
+	for (int i = 0; i < potential_moves.size(); i++)
+	{
+		cout << convert_int_to_chessboard_square(potential_moves[i].row, potential_moves[i].col) << ' ';
+	}
+	cout << '\n';
+
 	return false;
 }
 
@@ -714,26 +740,6 @@ Chessboard::Chessboard(string filename)
 			board[i][j].col = j;
 		}
 	}
-}
-
-
-// Given two coordinates, return a string of the board coordinates for that square.
-string convert_int_to_chessboard_square(int row, int col)
-{
-	string res = "";
-	res += ('a' + row);
-	res += ('1' + col);
-	return res;
-}
-
-
-// Give a string of the board coordinates, return the two coordinates for that square.
-vector<int> convert_chessboard_square_to_int(string position)
-{
-	vector<int> res;
-	res.push_back(position[1] - '1');
-	res.push_back(position[0] - 'a');
-	return res;
 }
 
 
