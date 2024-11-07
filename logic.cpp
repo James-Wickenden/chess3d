@@ -69,18 +69,32 @@ vector<int> convert_chessboard_square_to_int(string position)
 }
 
 
+// Take a vector<tuple<Square, vector<Square>>> object of the attackable squares and reduce it to a vector of the attacked squares
+vector<Square> parse_attackable_squares(vector<tuple<Square, vector<Square>>> attackable_squares)
+{
+	vector<Square> result;
+	for (int i = 0; i < attackable_squares.size(); i++)
+	{
+		vector<Square> selected_piece_attacked_squares = get<1>(attackable_squares[i]);
+		result.insert(result.end(), selected_piece_attacked_squares.begin(), selected_piece_attacked_squares.end());
+	}
+
+	return result;
+}
+
+
 // Find the two diagonal squares the pawn can capture on
-vector<Square> get_pawn_attacking_squares(Square target, vector<vector<Square>> board, Colour opp_colour, int dir, bool assume_king)
+vector<Square> get_pawn_attacking_squares(Square target, vector<vector<Square>> board, Colour opp_colour, int dir)
 {
 	vector<Square> pawn_attacking_squares;
 
 	if (target.col > 0) {
-		if (board[target.row + dir][target.col - 1].colour == opp_colour || assume_king) {
+		if (board[target.row + dir][target.col - 1].colour == opp_colour) {
 			pawn_attacking_squares.push_back(board[target.row + dir][target.col - 1]);
 		}
 	}
 	if (target.col < 7) {
-		if (board[target.row + dir][target.col + 1].colour == opp_colour || assume_king) {
+		if (board[target.row + dir][target.col + 1].colour == opp_colour) {
 			pawn_attacking_squares.push_back(board[target.row + dir][target.col + 1]);
 		}
 	}
@@ -114,7 +128,7 @@ vector<Square> get_prospective_pawn_moves(Square target, vector<vector<Square>> 
 		}
 
 		// in the case where there is an opposite-coloured piece diagonally in front of the pawn: that piece is capturable
-		vector<Square> pawn_attacking_Squares = get_pawn_attacking_squares(target, board, opp_colour, dir, false);
+		vector<Square> pawn_attacking_Squares = get_pawn_attacking_squares(target, board, opp_colour, dir);
 		prospective_moves.insert(prospective_moves.end(), pawn_attacking_Squares.begin(), pawn_attacking_Squares.end());
 	}
 
@@ -293,26 +307,14 @@ vector<Square> get_prospective_knight_moves(Square target, vector<vector<Square>
 }
 
 
-// Take a vector<tuple<Square, vector<Square>>> object of the attackable squares and reduce it to a vector of the attacked squares
-vector<Square> parse_attackable_squares(vector<tuple<Square, vector<Square>>> attackable_squares)
-{
-	vector<Square> result;
-	for (int i = 0; i < attackable_squares.size(); i++)
-	{
-		vector<Square> selected_piece_attacked_squares = get<1>(attackable_squares[i]);
-		result.insert(result.end(), selected_piece_attacked_squares.begin(), selected_piece_attacked_squares.end());
-	}
-
-	return result;
-}
-
-
 // Look in the immediate 3x3 grid around the king and check for any empty or opponent-occupied squares.
 // Then check for castling opportunies
-vector<Square> get_prospective_king_moves(Square target, vector<vector<Square>> board, Colour opp_colour)
+vector<Square> get_prospective_king_moves(Square target, Chessboard chessboard, Colour opp_colour)
 {
 	vector<Square> prospective_moves;
-	vector<Square> all_enemy_attacking_squares = parse_attackable_squares(find_all_attackable_squares(board, opp_colour, true));
+	//vector<Square> all_enemy_attacking_squares = parse_attackable_squares(find_all_attackable_squares(board, opp_colour, true));
+	vector<Square> all_enemy_attacking_squares = parse_attackable_squares(chessboard.valid_moves[opp_colour]);
+	vector<vector<Square>> board = chessboard.board;
 
 	for (int i = -1; i <= 1; i++)
 	{
@@ -325,6 +327,7 @@ vector<Square> get_prospective_king_moves(Square target, vector<vector<Square>> 
 
 			// skip the king in question
 			if (test_square.piece == Piece::KING) continue;
+
 			// to prevent the king moving next to another king, look in the 3x3 radius around the prospective square for the opponent king
 			bool neighbours_opponent_king = false;
 			for (int k = -1; k <= 1; k++)
@@ -349,6 +352,7 @@ vector<Square> get_prospective_king_moves(Square target, vector<vector<Square>> 
 		}
 	}
 
+	/*
 	if (!target.has_moved)
 	{
 		// queenside O-O-O
@@ -364,6 +368,7 @@ vector<Square> get_prospective_king_moves(Square target, vector<vector<Square>> 
 				prospective_moves.push_back(board[target.row][6]);
 		}
 	}
+	*/
 
 	return prospective_moves;
 }
@@ -441,9 +446,9 @@ vector<Square> trim_valid_moves(Square target, vector<vector<Square>> board, Col
 		{
 			for (int col = 0; col < DIM_SIZE; col++)
 			{
-				if (board[row][col].piece == Piece::KING && board[row][col].colour == target.colour)
+				if (test_board[row][col].piece == Piece::KING && test_board[row][col].colour == target.colour)
 				{
-					Square king = board[row][col];
+					Square king = test_board[row][col];
 					if (!is_king_attacked(king, test_board, opp_colour))
 						confirmed_moves.push_back(prosp_move);
 				}
@@ -456,9 +461,10 @@ vector<Square> trim_valid_moves(Square target, vector<vector<Square>> board, Col
 
 
 // For a given square, find all the moves that piece can move to
-vector<Square> get_valid_square_moves(Square target, vector<vector<Square>> board, Colour opp_colour)
+vector<Square> get_valid_square_moves(Square target, Chessboard chessboard, Colour opp_colour)
 {
 	vector<Square> prospective_moves;
+	vector<vector<Square>> board = chessboard.board;
 
 	switch (target.piece)
 	{
@@ -480,21 +486,22 @@ vector<Square> get_valid_square_moves(Square target, vector<vector<Square>> boar
 		prospective_moves = get_prospective_knight_moves(target, board, opp_colour);
 		break;
 	case Piece::KING:
-		prospective_moves = get_prospective_king_moves(target, board, opp_colour);
+		prospective_moves = get_prospective_king_moves(target, chessboard, opp_colour);
 		break;
 	}
 
 	// take the list of prospective moves and reduce it to only valid ones
-	vector<Square> confirmed_moves = trim_valid_moves(target, board, opp_colour, prospective_moves);
+	vector<Square> confirmed_moves = trim_valid_moves(target, chessboard.board, opp_colour, prospective_moves);
 	return confirmed_moves;
 }
 
 
 // Go through the board and compile a list of all the squares a player is currently targeting
-vector<tuple<Square, vector<Square>>> LogicEngine::find_all_attackable_squares(vector<vector<Square>> board, Colour colour, bool assume_king)
+vector<tuple<Square, vector<Square>>> LogicEngine::find_all_attackable_squares(Chessboard chessboard, Colour colour)
 {
 	vector<tuple<Square, vector<Square>>> all_attackable_squares;
 	Colour opp_colour = (colour == Colour::WHITE) ? Colour::BLACK : Colour::WHITE;
+	vector<vector<Square>> board = chessboard.board;
 
 	for (int row = 0; row < DIM_SIZE; row++)
 	{
@@ -506,18 +513,14 @@ vector<tuple<Square, vector<Square>>> LogicEngine::find_all_attackable_squares(v
 				int dir = (board[row][col].colour == Colour::WHITE) ? 1 : -1;
 				switch (board[row][col].piece)
 				{
-					// Skip over the king. We already catch it in the king prospective move function and it would recurse infinitely.
-					case Piece::KING:
-						continue;
-						break;
 					// Pawns are handled separately since they cannot attack the same squares they can move to.
 					case Piece::PAWN:
-						confirmed_piece_moves = { board[row][col], get_pawn_attacking_squares(board[row][col], board, opp_colour, dir, assume_king) };
+						confirmed_piece_moves = { board[row][col], get_pawn_attacking_squares(board[row][col], board, opp_colour, dir) };
 						all_attackable_squares.push_back(confirmed_piece_moves);
 						break;
 					// For other pieces: we find their moves and add them to the list.
 					default:
-						confirmed_piece_moves = { board[row][col], get_valid_square_moves(board[row][col], board, opp_colour) };
+						confirmed_piece_moves = { board[row][col], get_valid_square_moves(board[row][col], chessboard, opp_colour) };
 						all_attackable_squares.push_back(confirmed_piece_moves);
 						break;
 				}
@@ -573,8 +576,8 @@ void make_move(Chessboard* cb, vector<Square> valid_piece_moves, vector<int> tar
 	}
 
 	// Find the valid move lists for each player
-	(*cb).valid_moves[Colour::WHITE] = find_all_attackable_squares(cb->board, Colour::WHITE, false);
-	(*cb).valid_moves[Colour::BLACK] = find_all_attackable_squares(cb->board, Colour::BLACK, false);
+	(*cb).valid_moves[Colour::WHITE] = find_all_attackable_squares(*cb, Colour::WHITE);
+	(*cb).valid_moves[Colour::BLACK] = find_all_attackable_squares(*cb, Colour::BLACK);
 
 	//2. Look for check, checkmate and stalemate
 	vector<Square> attackable_squares = parse_attackable_squares((*cb).valid_moves[colour]);
@@ -605,7 +608,7 @@ vector<Square> Chessboard::find_valid_moves(Square target)
 	vector<vector<Square>> board = this->board;
 	Colour opp_colour = (target.colour == Colour::WHITE) ? Colour::BLACK : Colour::WHITE;
 
-	vector<Square> confirmed_moves = get_valid_square_moves(target, board, opp_colour);
+	vector<Square> confirmed_moves = get_valid_square_moves(target, *this, opp_colour);
 	return confirmed_moves;
 }
 

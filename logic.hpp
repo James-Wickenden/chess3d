@@ -65,5 +65,5 @@ namespace LogicEngine
     };
 
     std::vector<std::tuple<Square, std::vector<Square>>> 
-        find_all_attackable_squares(std::vector<std::vector<Square>> board, Colour colour, bool assume_king);
+        find_all_attackable_squares(Chessboard chessboard, Colour colour);
 }
