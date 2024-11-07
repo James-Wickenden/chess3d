@@ -9,12 +9,11 @@ https://github.com/James-Wickenden/chess3d
 ## Todo:
 
 - Parse model OBJs and MTLs into 3d space with openGL
-- Add camera controls w tutorial help with mouse/arrow key movement
+- Add camera controls w/ tutorial help with mouse/arrow key movement
 - Create the game logic for chess, based on building the incremental steps of a gameplay session:
 	- Storing moves as notation
-	- Advanced moves: en passant
-- Undoing moves with a gamestate stack
-- Adding a PGN to the game window
+	- Undoing moves with a gamestate stack
+	- Adding a PGN to the game window
 - Saving/loading games
 - Sound effects!
 - Playing w a bot by API?
@@ -22,12 +21,9 @@ https://github.com/James-Wickenden/chess3d
 ## In progress:
 
 - Create the game logic for chess, based on building the incremental steps of a gameplay session:
-	- Detecting check
-	- Detecting checkmate
-	- Detecting stalemate
-	- Preventing the king from moving into check
 	- Preventing castling through check
-	
+	- Advanced moves: en passant
+	- Advanced moves: castling
 - Create low poly 3d chess models
 
 ## Completed:
@@ -39,6 +35,10 @@ https://github.com/James-Wickenden/chess3d
 	- Moving pieces
 	- Finding all valid moves given a piece/board
 	- Capturing pieces
+	- Detecting check
+	- Detecting checkmate
+	- Detecting stalemate
+	- Preventing the king from moving into check
 
 ---
 

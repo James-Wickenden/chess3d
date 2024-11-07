@@ -313,7 +313,7 @@ vector<Square> get_prospective_king_moves(Square target, Chessboard chessboard, 
 {
 	vector<Square> prospective_moves;
 	//vector<Square> all_enemy_attacking_squares = parse_attackable_squares(find_all_attackable_squares(board, opp_colour, true));
-	vector<Square> all_enemy_attacking_squares = parse_attackable_squares(chessboard.valid_moves[opp_colour]);
+	vector<Square> all_enemy_attacking_squares = parse_attackable_squares(chessboard.attacking_moves[opp_colour]);
 	vector<vector<Square>> board = chessboard.board;
 
 	for (int i = -1; i <= 1; i++)
@@ -496,7 +496,7 @@ vector<Square> get_valid_square_moves(Square target, Chessboard chessboard, Colo
 
 
 // Go through the board and compile a list of all the squares a player is currently targeting
-vector<tuple<Square, vector<Square>>> LogicEngine::find_all_attackable_squares(Chessboard chessboard, Colour colour)
+vector<tuple<Square, vector<Square>>> LogicEngine::find_all_attackable_squares(Chessboard chessboard, Colour colour, int mode)
 {
 	vector<tuple<Square, vector<Square>>> all_attackable_squares;
 	Colour opp_colour = (colour == Colour::WHITE) ? Colour::BLACK : Colour::WHITE;
@@ -509,18 +509,30 @@ vector<tuple<Square, vector<Square>>> LogicEngine::find_all_attackable_squares(C
 			if (board[row][col].colour == colour)
 			{
 				tuple<Square, vector<Square>> confirmed_piece_moves;
-				int dir = (board[row][col].colour == Colour::WHITE) ? 1 : -1;
-				switch (board[row][col].piece)
+				switch (mode)
 				{
-					// Pawns are handled separately since they cannot attack the same squares they can move to.
-					case Piece::PAWN:
-						confirmed_piece_moves = { board[row][col], get_pawn_attacking_squares(board[row][col], board, opp_colour, dir) };
-						all_attackable_squares.push_back(confirmed_piece_moves);
-						break;
-					// For other pieces: we find their moves and add them to the list.
-					default:
+					// find all the valid moves
+					case 0:
 						confirmed_piece_moves = { board[row][col], get_valid_square_moves(board[row][col], chessboard, opp_colour) };
 						all_attackable_squares.push_back(confirmed_piece_moves);
+						break;
+
+					// find all the attacking moves. this only excludes pawns moving forward, which are not squares attacked by the pawn
+					case 1:
+						int dir = (board[row][col].colour == Colour::WHITE) ? 1 : -1;
+						switch (board[row][col].piece)
+						{
+							// Pawns are handled separately since they cannot attack the same squares they can move to.
+							case Piece::PAWN:
+								confirmed_piece_moves = { board[row][col], get_pawn_attacking_squares(board[row][col], board, opp_colour, dir) };
+								all_attackable_squares.push_back(confirmed_piece_moves);
+								break;
+							// For other pieces: we find their moves and add them to the list.
+							default:
+								confirmed_piece_moves = { board[row][col], get_valid_square_moves(board[row][col], chessboard, opp_colour) };
+								all_attackable_squares.push_back(confirmed_piece_moves);
+								break;
+						}
 						break;
 				}
 			}
@@ -538,14 +550,6 @@ vector<tuple<Square, vector<Square>>> LogicEngine::find_all_attackable_squares(C
 bool test_for_checkmate_stalemate(Chessboard* cb, Colour player, Colour opp_colour)
 {
 	vector<Square> potential_moves = parse_attackable_squares((*cb).valid_moves[player]);
-	
-	cout << "Number of valid moves: " << potential_moves.size() << "\nValid moves are: ";
-	for (int i = 0; i < potential_moves.size(); i++)
-	{
-		cout << convert_int_to_chessboard_square(potential_moves[i].col, potential_moves[i].row) << ' ';
-	}
-	cout << '\n';
-
 	return potential_moves.size() == 0;
 }
 
@@ -577,11 +581,14 @@ Gamestate make_move(Chessboard* cb, vector<Square> valid_piece_moves, vector<int
 	}
 
 	// Find the valid move lists for each player
-	(*cb).valid_moves[Colour::WHITE] = find_all_attackable_squares(*cb, Colour::WHITE);
-	(*cb).valid_moves[Colour::BLACK] = find_all_attackable_squares(*cb, Colour::BLACK);
+	(*cb).valid_moves[Colour::WHITE] = find_all_attackable_squares(*cb, Colour::WHITE, 0);
+	(*cb).valid_moves[Colour::BLACK] = find_all_attackable_squares(*cb, Colour::BLACK, 0);
+
+	(*cb).attacking_moves[Colour::WHITE] = find_all_attackable_squares(*cb, Colour::WHITE, 1);
+	(*cb).attacking_moves[Colour::BLACK] = find_all_attackable_squares(*cb, Colour::BLACK, 1);
 
 	//2. Look for check, checkmate and stalemate
-	vector<Square> attackable_squares = parse_attackable_squares((*cb).valid_moves[colour]);
+	vector<Square> attackable_squares = parse_attackable_squares((*cb).attacking_moves[colour]);
 	bool is_check = false;
 	for (int i = 0; i < attackable_squares.size(); i++)
 	{
@@ -623,7 +630,7 @@ vector<Square> Chessboard::find_valid_moves(Square target)
 
 
 // Print a coloured board to the console.
-void print_board(Chessboard chessboard, vector<Square> valid_moves)
+void print_board(Chessboard chessboard, vector<Square> valid_moves, Gamestate gamestate)
 {
 	map<Piece, char> piece_map = {
 		{ Piece::EMPTY,  ' ' },
@@ -695,7 +702,8 @@ void print_board(Chessboard chessboard, vector<Square> valid_moves)
 		cout << '\n';
 	}
 	cout << "\n  abcdefgh\n\n";
-	cout << "\033[1;32m" << (chessboard.active_player == Colour::WHITE ? "WHITE" : "BLACK") << " TO MOVE\033[0m\n\n";
+	if (gamestate == Gamestate::NORMAL || gamestate == Gamestate::CHECK)
+		cout << "\033[1;32m" << (chessboard.active_player == Colour::WHITE ? "WHITE" : "BLACK") << " TO MOVE\033[0m\n\n";
 	return;
 }
 
@@ -703,6 +711,7 @@ void print_board(Chessboard chessboard, vector<Square> valid_moves)
 // Take in a string for a text file, read the board, remove newline characters, and return it
 string read_board_setup_file(string filename)
 {
+	// todo: replace this with local pathing
 	string path_to_file = "C:/Users/James/source/repos/chess3d/";
 	std::ifstream file(path_to_file + filename);
 	std::string line;
@@ -758,9 +767,25 @@ Chessboard::Chessboard(string filename)
 // Main game loop
 void loop_board(Chessboard cb)
 {
+	// Find the valid move lists for each player
+	cb.valid_moves[Colour::WHITE] = find_all_attackable_squares(cb, Colour::WHITE, 0);
+	cb.valid_moves[Colour::BLACK] = find_all_attackable_squares(cb, Colour::BLACK, 0);
+
+	cb.attacking_moves[Colour::WHITE] = find_all_attackable_squares(cb, Colour::WHITE, 1);
+	cb.attacking_moves[Colour::BLACK] = find_all_attackable_squares(cb, Colour::BLACK, 1);
+
+
 	while(true)
 	{
-		print_board(cb, vector<Square>());
+		vector<Square> potential_moves = parse_attackable_squares(cb.valid_moves[cb.active_player]);
+		cout << "Number of valid moves: " << potential_moves.size() << "\nValid moves are: ";
+		for (int i = 0; i < potential_moves.size(); i++)
+		{
+			cout << convert_int_to_chessboard_square(potential_moves[i].col, potential_moves[i].row) << ' ';
+		}
+		cout << '\n';
+
+		print_board(cb, vector<Square>(), Gamestate::NORMAL);
 
 		// first select the piece to move and get a list of the squares the piece can move to
 		string target_square, destination_square;
@@ -778,14 +803,16 @@ void loop_board(Chessboard cb)
 		// find and print the list of moves from that square's piece
 		cout << "\x1B[2J\x1B[H";
 		cout << "Moves: ";
+
 		vector<Square> vms = cb.find_valid_moves(cb.board[target_position[0]][target_position[1]]);
+		//vector<Square> vms = parse_attackable_squares(cb.valid_moves[cb.active_player]);
 		for (int i = 0; i < vms.size(); i++)
 		{
 			cout << convert_int_to_chessboard_square(vms[i].col, vms[i].row) << ' ';
 		}
 		cout << '\n';
 
-		print_board(cb, vms);
+		print_board(cb, vms, Gamestate::NORMAL);
 
 		// then get the square to move to, and if on the list, we can make the move
 		cout << "\nChoose destination square: ";
@@ -805,13 +832,13 @@ void loop_board(Chessboard cb)
 				cout << "\033[1;33mThe king is in check\033[0m\n";
 				break;
 			case Gamestate::CHECKMATE:
-				winner = (cb.active_player == Colour::WHITE) ? "Black" : "White";
+				winner = (cb.active_player == Colour::WHITE) ? "White" : "Black";
 				cout << "\033[1;33mThe king is checkmated! Game over. " << winner << " wins!\033[0m\n";
-				print_board(cb, vector<Square>());
+				print_board(cb, vector<Square>(), gs);
 				return;
 			case Gamestate::STALEMATE:
 				cout << "\033[1;33mIts a stalemate! Game ends in a tie.\033[0m\n";
-				print_board(cb, vector<Square>());
+				print_board(cb, vector<Square>(), gs);
 				return;
 		}
 	}
@@ -822,7 +849,7 @@ void loop_board(Chessboard cb)
 
 int main()
 {
-	//Chessboard cb = Chessboard();
-	Chessboard cb = Chessboard("test_position.txt");
+	Chessboard cb = Chessboard();
+	//Chessboard cb = Chessboard("test_position.txt");
 	loop_board(cb);
 }

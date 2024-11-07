@@ -64,6 +64,7 @@ namespace LogicEngine
     public:
         std::vector<std::vector<Square>> board;
         std::map<Colour, std::vector<std::tuple<Square, std::vector<Square>>>> valid_moves;
+        std::map<Colour, std::vector<std::tuple<Square, std::vector<Square>>>> attacking_moves;
         Colour active_player;
 
         std::vector<Square> find_valid_moves(Square target);
@@ -73,5 +74,5 @@ namespace LogicEngine
     };
 
     std::vector<std::tuple<Square, std::vector<Square>>> 
-        find_all_attackable_squares(Chessboard chessboard, Colour colour);
+        find_all_attackable_squares(Chessboard chessboard, Colour colour, int mode);
 }
