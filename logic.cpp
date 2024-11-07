@@ -5,8 +5,9 @@
 using namespace std;
 using namespace LogicEngine;
 
-const int DIM_SIZE = 8;
+const int DIM_SIZE = 8; // size of the chessboard
 
+// Define constructors for squares based off different input sets.
 Square::Square()
 {
 	colour = Colour::EMPTY;
@@ -34,6 +35,7 @@ Square::Square(Piece piece_type, Colour c)
 	has_moved = false;
 }
 
+// Define equating two squares based on their attributes.
 bool Square::operator==(const Square rhs) const
 {
 	return (colour == rhs.colour)
@@ -103,6 +105,8 @@ vector<Square> get_pawn_attacking_squares(Square target, vector<vector<Square>> 
 }
 
 
+// For pawns, look a square ahead in the direction a pawn can move in, or two if the paawn hasn't moved yet.
+// Also check for diagonal captures and en passant.
 vector<Square> get_prospective_pawn_moves(Square target, vector<vector<Square>> board, Colour opp_colour)
 {
 	vector<Square> prospective_moves;
@@ -140,6 +144,8 @@ vector<Square> get_prospective_pawn_moves(Square target, vector<vector<Square>> 
 }
 
 
+// For rooks and bishops, test to see if the prospective square is valid (i.e. not occupied by a piece of the same colour.
+// If not valid, set the progress_search flag to false to prevent looking any further in the piece's sightline.
 void progress_rook_bishop_search(Square target, Square test_square, Colour opp_colour, vector<Square>* prospective_moves, bool* progress_search)
 {
 	if (test_square.colour == Colour::EMPTY)
@@ -264,6 +270,7 @@ vector<Square> get_prospective_bishop_moves(Square target, vector<vector<Square>
 }
 
 
+// Find queen moves by imagining the queen as a rook and bishop and concatenating the prospective moves of the two
 vector<Square> get_prospective_queen_moves(Square target, vector<vector<Square>> board, Colour opp_colour)
 {
 	vector<Square> prospective_moves_rook = get_prospective_rook_moves(target, board, opp_colour);
@@ -276,6 +283,8 @@ vector<Square> get_prospective_queen_moves(Square target, vector<vector<Square>>
 }
 
 
+// Given a square the knight could move to, determine if that square is on the board.
+// If so, find out if its a prospective move (i.e. not occupied by a piece of the same colour).
 bool is_knight_square_prospective(Square target, vector<vector<Square>> board, Colour opp_colour, int row_t, int col_t)
 {
 	if ((target.row + row_t >= DIM_SIZE) || (target.row + row_t < 0) || (target.col + col_t >= DIM_SIZE) || (target.col + col_t < 0))
@@ -289,6 +298,7 @@ bool is_knight_square_prospective(Square target, vector<vector<Square>> board, C
 }
 
 
+// Find knight moves by defining a list of all the knight's move patterns, and testing for each.
 vector<Square> get_prospective_knight_moves(Square target, vector<vector<Square>> board, Colour opp_colour)
 {
 	vector<Square> prospective_moves;
@@ -353,6 +363,7 @@ vector<Square> get_prospective_king_moves(Square target, Chessboard chessboard, 
 	}
 
 	/*
+	// handling castling
 	if (!target.has_moved)
 	{
 		// queenside O-O-O
@@ -580,7 +591,13 @@ Gamestate make_move(Chessboard* cb, vector<Square> valid_piece_moves, vector<int
 		}
 	}
 
-	// Find the valid move lists for each player
+	// Find the valid and attacking move lists for each player
+	// Attacking moves do not include the squares that pawns can move to, as they are not attacking these squares.
+	// We store these two lists separately so that we can use the valid moves list to find squares to move to,
+	//	and the attacking moves list to search for stalemate and checkmate conditions.
+	// Both 'lists' are actually stored as a map with colour keys and a vector of tuples for values,
+	//	where the tuples contain the coloured piece and a vector of the squares that piece can move to or attack.
+	// i.e.: std::map<Colour, std::vector<std::tuple<Square, std::vector<Square>>>>
 	(*cb).valid_moves[Colour::WHITE] = find_all_attackable_squares(*cb, Colour::WHITE, 0);
 	(*cb).valid_moves[Colour::BLACK] = find_all_attackable_squares(*cb, Colour::BLACK, 0);
 
@@ -725,6 +742,8 @@ string read_board_setup_file(string filename)
 }
 
 
+// Initialise a chessboard from a text file.
+// The piece mmap defines how the text file should be structured, with uppercase for white pieces and lowercase for black.
 Chessboard::Chessboard(string filename)
 {
 	string setup_position = read_board_setup_file(filename);
