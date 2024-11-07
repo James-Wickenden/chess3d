@@ -303,8 +303,25 @@ vector<Square> get_prospective_king_moves(Square target, vector<vector<Square>> 
 
 			Square test_square = board[target.row + i][target.col + j];
 
-			// skip the king and prevent the king moving next to another king
+			// skip the king in question
 			if (test_square.piece == Piece::KING) continue;
+			// to prevent the king moving next to another king, look in the 3x3 radius around the prospective square for the opponent king
+			bool neighbours_opponent_king = false;
+			for (int k = -1; k <= 1; k++)
+			{
+				for (int l = -1; l <= 1; l++)
+				{
+					int test_row = target.row + i + k;
+					int test_col = target.col + j + l;
+					if ((test_row >= DIM_SIZE) || (test_row < 0) || (test_col >= DIM_SIZE) || (test_col < 0))
+						continue;
+
+					if (board[test_row][test_col].piece == Piece::KING && board[test_row][test_col].colour == opp_colour)
+						neighbours_opponent_king = true;
+				}
+			}
+			if (neighbours_opponent_king) continue;
+
 			// the king cannot move into an attacked square
 			if (count(all_enemy_attacking_squares.begin(), all_enemy_attacking_squares.end(), test_square) > 0) continue;
 
