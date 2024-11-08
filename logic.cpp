@@ -15,6 +15,7 @@ Square::Square()
 	row = -1;
 	col = -1;
 	has_moved = true;
+	when_moved = {};
 }
 
 Square::Square(int r, int c)
@@ -24,16 +25,20 @@ Square::Square(int r, int c)
 	row = r;
 	col = c;
 	has_moved = true;
+	when_moved = {};
 }
 
-Square::Square(Piece piece_type, Colour c)
+
+Square::Square(Piece p, Colour c, int i, int j, bool h_m, vector<int> w_m)
 {
+	piece = p;
 	colour = c;
-	piece = piece_type;
-	row = -1;
-	col = -1;
-	has_moved = true;
+	row = i;
+	col = j;
+	has_moved = h_m;
+	when_moved = w_m;
 }
+
 
 // Define equating two squares based on their attributes.
 bool Square::operator==(const Square rhs) const
@@ -105,9 +110,29 @@ vector<Square> get_pawn_attacking_squares(Square target, vector<vector<Square>> 
 }
 
 
+// Go through the logic of en passant, determining whether the move is legal for a specified direction (-1 for left, 1 for right)
+bool can_en_passant(Square pawn, vector<vector<Square>> board, Colour opp_colour, int dir, int move_no)
+{
+	int test_col = pawn.col + dir;
+
+	if (test_col < 0 || test_col >= DIM_SIZE)
+		return false;
+
+	if (board[pawn.row][test_col].piece != Piece::PAWN)
+		return false;
+
+	// If the last move was the pawn, we can en passant it
+	// TODO: this does not handle for the case of pawns moving two tiles in two separate moves!
+	if ((board[pawn.row][test_col].when_moved.size() == 1) && (board[pawn.row][test_col].when_moved.back() == move_no - 1))
+		return true;
+	else
+		return false;
+}
+
+
 // For pawns, look a square ahead in the direction a pawn can move in, or two if the paawn hasn't moved yet.
 // Also check for diagonal captures and en passant.
-vector<Square> get_prospective_pawn_moves(Square target, vector<vector<Square>> board, Colour opp_colour)
+vector<Square> get_prospective_pawn_moves(Square target, vector<vector<Square>> board, Colour opp_colour, int move_no)
 {
 	vector<Square> prospective_moves;
 
@@ -122,7 +147,7 @@ vector<Square> get_prospective_pawn_moves(Square target, vector<vector<Square>> 
 			prospective_moves.push_back(board[target.row + dir][target.col]);
 
 			// case for pawns on the starting file
-			if (!target.has_moved)
+			if (!target.has_moved && target.row == ((target.colour == Colour::WHITE) ? 1 : 6))
 			{
 				if (board[target.row + (dir * 2)][target.col].colour == Colour::EMPTY)
 				{
@@ -137,8 +162,19 @@ vector<Square> get_prospective_pawn_moves(Square target, vector<vector<Square>> 
 	}
 
 	//todo: en passant prospective move
-	//
-	//
+	// Check for en passant. For this, the piece must have advanced exactly three ranks: white pawns must be on rank 5 and black on rank 4
+	// Then, an opponent pawn must have moved two ranks forward in the previous move to be adjacent to the pawn.
+	// If so, we can move the pawn diagonally and capture the opponent pawn.
+	if (target.row == ((target.colour == Colour::WHITE) ? 4 : 3))
+	{
+		// to the left
+		if (can_en_passant(target, board, opp_colour, -1, move_no))
+			prospective_moves.push_back(board[target.row + dir][target.col - 1]);
+		// to the right
+		if (can_en_passant(target, board, opp_colour, 1, move_no))
+			prospective_moves.push_back(board[target.row + dir][target.col + 1]);
+	}
+	
 
 	return prospective_moves;
 }
@@ -481,6 +517,7 @@ vector<Square> trim_valid_moves(Square target, vector<vector<Square>> board, Col
 		test_board[prosp_move.row][prosp_move.col].piece = test_board[target.row][target.col].piece;
 		test_board[prosp_move.row][prosp_move.col].colour = test_board[target.row][target.col].colour;
 		test_board[prosp_move.row][prosp_move.col].has_moved = true;
+		test_board[prosp_move.row][prosp_move.col].when_moved = test_board[target.row][target.col].when_moved;
 
 		test_board[target.row][target.col] = Square(target.row, target.col);
 
@@ -514,7 +551,7 @@ vector<Square> get_valid_square_moves(Square target, Chessboard chessboard, Colo
 	case Piece::EMPTY:
 		break;
 	case Piece::PAWN:
-		prospective_moves = get_prospective_pawn_moves(target, board, opp_colour);
+		prospective_moves = get_prospective_pawn_moves(target, board, opp_colour, chessboard.move_no);
 		break;
 	case Piece::ROOK:
 		prospective_moves = get_prospective_rook_moves(target, board, opp_colour);
@@ -598,11 +635,15 @@ bool test_for_checkmate_stalemate(Chessboard* cb, Colour player, Colour opp_colo
 }
 
 
+// handles the logic of moving one square into another, and replacing the moved square with an empty square
 void switch_pieces(Chessboard *cb, vector<int> target_position, vector<int> destination_position)
 {
 	cb->board[destination_position[0]][destination_position[1]].piece = cb->board[target_position[0]][target_position[1]].piece;
 	cb->board[destination_position[0]][destination_position[1]].colour = cb->board[target_position[0]][target_position[1]].colour;
 	cb->board[destination_position[0]][destination_position[1]].has_moved = true;
+
+	cb->board[destination_position[0]][destination_position[1]].when_moved = cb->board[target_position[0]][target_position[1]].when_moved;
+	cb->board[destination_position[0]][destination_position[1]].when_moved.push_back(cb->move_no);
 
 	cb->board[target_position[0]][target_position[1]] = Square(target_position[0], target_position[1]);
 }
@@ -618,6 +659,7 @@ Gamestate make_move(Chessboard* cb, vector<Square> valid_piece_moves, vector<int
 {
 	Colour colour = cb->board[target_position[0]][target_position[1]].colour;
 	Colour opp_colour = (colour == Colour::WHITE) ? Colour::BLACK : Colour::WHITE;
+	Square destination_piece = cb->board[destination_position[0]][destination_position[1]];
 
 	// 1. Make the move
 	for (int i = 0; i < valid_piece_moves.size(); i++)
@@ -630,22 +672,31 @@ Gamestate make_move(Chessboard* cb, vector<Square> valid_piece_moves, vector<int
 		}
 	}
 
-	// check to see if we castled; if so, then the rook needs to be moved too.
 	Square moved_piece = cb->board[destination_position[0]][destination_position[1]];
-	if (moved_piece.piece == Piece::KING && target_position[1] == 4)
+	switch (moved_piece.piece)
 	{
-		// Queenside
-		if (destination_position[1] == 2)
-		{
-			switch_pieces(cb, vector<int>({ target_position[0], 0 }), vector<int>({ target_position[0], 3 }));
-		}
-		// Kingside
-		else if (destination_position[1] == 6)
-		{
-			switch_pieces(cb, vector<int>({ target_position[0], 7 }), vector<int>({ target_position[0], 5 }));
-		}
+		case Piece::KING:
+			// check to see if we castled; if so, then the rook needs to be moved too.
+			// Queenside
+			if (target_position[1] == 4 && destination_position[1] == 2)
+			{
+				switch_pieces(cb, vector<int>({ target_position[0], 0 }), vector<int>({ target_position[0], 3 }));
+			}
+			// Kingside
+			else if (target_position[1] == 4 && destination_position[1] == 6)
+			{
+				switch_pieces(cb, vector<int>({ target_position[0], 7 }), vector<int>({ target_position[0], 5 }));
+			}
+			break;
+		case Piece::PAWN:
+			// check to see if we captured via en passant; if so, remove the captured pawn
+			if (destination_piece.piece == Piece::EMPTY && destination_piece.col != target_position[1])
+			{
+				cb->board[target_position[0]][destination_position[1]] = Square(target_position[0], destination_position[1]);
+			}
+			break;
 	}
-
+	
 	// Find the valid and attacking move lists for each player
 	// Attacking moves do not include the squares that pawns can move to, as they are not attacking these squares.
 	// We store these two lists separately so that we can use the valid moves list to find squares to move to,
@@ -682,6 +733,10 @@ Gamestate make_move(Chessboard* cb, vector<Square> valid_piece_moves, vector<int
 
 	// 3. At the end of the move, the active player colour is switched.
 	cb->active_player = opp_colour;
+
+	// 4. Increment the move counter.
+	cb->move_no++;
+
 	if (is_check) return Gamestate::CHECK;
 	return Gamestate::NORMAL;
 }
@@ -822,6 +877,7 @@ Chessboard::Chessboard(string filename)
 	vector<Square> row(DIM_SIZE);
 	vector<vector<Square>> b(DIM_SIZE, row);
 	active_player = Colour::WHITE;
+	move_no = 1;
 
 	board = b;
 
@@ -829,11 +885,9 @@ Chessboard::Chessboard(string filename)
 	{
 		for (int j = 0; j < DIM_SIZE; j++)
 		{
-			board[i][j].piece =  get<0>(piece_map[setup_position[((DIM_SIZE - (i + 1)) * DIM_SIZE) + j]]);
-			board[i][j].colour = get<1>(piece_map[setup_position[((DIM_SIZE - (i + 1)) * DIM_SIZE) + j]]);
-			board[i][j].row = i;
-			board[i][j].col = j;
-			board[i][j].has_moved = false;
+			Piece p = get<0>(piece_map[setup_position[((DIM_SIZE - (i + 1)) * DIM_SIZE) + j]]);
+			Colour c = get<1>(piece_map[setup_position[((DIM_SIZE - (i + 1)) * DIM_SIZE) + j]]);
+			board[i][j] = Square(p, c, i, j, false, vector<int>());
 		}
 	}
 }
@@ -926,6 +980,7 @@ int main()
 {
 	//Chessboard cb = Chessboard();
 	//Chessboard cb = Chessboard("test_position.txt");
-	Chessboard cb = Chessboard("test_castling.txt");
+	//Chessboard cb = Chessboard("test_castling.txt");
+	Chessboard cb = Chessboard("test_ep.txt");
 	loop_board(cb);
 }

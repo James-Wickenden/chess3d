@@ -48,12 +48,13 @@ namespace LogicEngine
         int row;
         int col;
         bool has_moved;
+        std::vector<int> when_moved; // List of move numbers when that piece was moved
         bool operator==(const Square rhs) const;
         bool operator!=(const Square rhs) const;
 
         Square();
         Square(int row, int col);
-        Square(Piece piece, Colour colour);
+        Square(Piece p, Colour c, int i, int j, bool h_m, std::vector<int> w_m);
     };
 
 
@@ -66,6 +67,7 @@ namespace LogicEngine
         std::map<Colour, std::vector<std::tuple<Square, std::vector<Square>>>> valid_moves;
         std::map<Colour, std::vector<std::tuple<Square, std::vector<Square>>>> attacking_moves;
         Colour active_player;
+        int move_no;
 
         std::vector<Square> find_valid_moves(Square target);
 
