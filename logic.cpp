@@ -14,7 +14,7 @@ Square::Square()
 	piece = Piece::EMPTY;
 	row = -1;
 	col = -1;
-	has_moved = false;
+	has_moved = true;
 }
 
 Square::Square(int r, int c)
@@ -23,7 +23,7 @@ Square::Square(int r, int c)
 	piece = Piece::EMPTY;
 	row = r;
 	col = c;
-	has_moved = false;
+	has_moved = true;
 }
 
 Square::Square(Piece piece_type, Colour c)
@@ -32,7 +32,7 @@ Square::Square(Piece piece_type, Colour c)
 	piece = piece_type;
 	row = -1;
 	col = -1;
-	has_moved = false;
+	has_moved = true;
 }
 
 // Define equating two squares based on their attributes.
@@ -317,6 +317,42 @@ vector<Square> get_prospective_knight_moves(Square target, vector<vector<Square>
 }
 
 
+// detect validity of castling by looking for empty squares and unattacked squares between king and rook
+// the two checks are performed on different lists of squares, so must be handled separately
+bool can_castle(int target_row, Chessboard *chessboard, Colour opp_colour, vector<int> empty_cols, vector<int> unattacked_cols)
+{
+	vector<vector<Square>> board = chessboard->board;
+
+	// iterate rows { 1, 2, 3 } for queenside, and { 5, 6 } for kingside
+	// check that squares inbetween the king and rook must be empty
+	for (int i = 0; i < empty_cols.size(); i++)
+	{
+		int column_under_test = empty_cols[i];
+		if (!(board[target_row][column_under_test].piece == Piece::EMPTY))
+		{
+			//cout << "found occupied square at " << target_row << ',' << column_under_test << '\n';
+			return false;
+		}
+	}
+
+	// iterate rows { 2, 3, 4 } for queenside, and { 4, 5, 6 } for kingside
+	// check that squares the king moves through cannot be attacked by the opponent, and the king cannot be in check
+	vector<Square> attacked_squares = parse_attackable_squares(chessboard->attacking_moves[opp_colour]);
+	for (int i = 0; i < unattacked_cols.size(); i++)
+	{
+		int column_under_test = unattacked_cols[i];
+		Square square_under_test = board[target_row][column_under_test];
+		if (count(attacked_squares.begin(), attacked_squares.end(), square_under_test) > 0)
+		{
+			//cout << "found attacked square at " << square_under_test.row << ',' << square_under_test.col << '\n';
+			return false;
+		}
+	}
+
+	return true;
+}
+
+
 // Look in the immediate 3x3 grid around the king and check for any empty or opponent-occupied squares.
 // Then check for castling opportunies
 vector<Square> get_prospective_king_moves(Square target, Chessboard chessboard, Colour opp_colour)
@@ -362,24 +398,27 @@ vector<Square> get_prospective_king_moves(Square target, Chessboard chessboard, 
 		}
 	}
 
-	/*
+	
 	// handling castling
-	if (!target.has_moved)
+	if (!target.has_moved && target.col == 4)
 	{
 		// queenside O-O-O
-		if (!board[target.row][0].has_moved)
+		if (!board[target.row][0].has_moved && board[target.row][0].piece == Piece::ROOK)
 		{
-			if (board[target.row][1].piece == Piece::EMPTY && board[target.row][2].piece == Piece::EMPTY && board[target.row][3].piece == Piece::EMPTY)
+			bool can_queenside_castle = can_castle(target.row, &chessboard, opp_colour, vector<int>({1, 2, 3}), vector<int>({ 2, 3, 4 }));
+			if (can_queenside_castle)
 				prospective_moves.push_back(board[target.row][2]);
 		}
+
 		// kingside O-O
-		if (!board[target.row][7].has_moved)
+		if (!board[target.row][7].has_moved && board[target.row][0].piece == Piece::ROOK)
 		{
-			if (board[target.row][6].piece == Piece::EMPTY && board[target.row][5].piece == Piece::EMPTY)
+			bool can_kingside_castle = can_castle(target.row, &chessboard, opp_colour, vector<int>({5, 6}), vector<int>({4, 5, 6}));
+			if (can_kingside_castle)
 				prospective_moves.push_back(board[target.row][6]);
 		}
 	}
-	*/
+	
 
 	return prospective_moves;
 }
@@ -778,6 +817,7 @@ Chessboard::Chessboard(string filename)
 			board[i][j].colour = get<1>(piece_map[setup_position[((DIM_SIZE - (i + 1)) * DIM_SIZE) + j]]);
 			board[i][j].row = i;
 			board[i][j].col = j;
+			board[i][j].has_moved = false;
 		}
 	}
 }
@@ -868,7 +908,8 @@ void loop_board(Chessboard cb)
 
 int main()
 {
-	Chessboard cb = Chessboard();
+	//Chessboard cb = Chessboard();
 	//Chessboard cb = Chessboard("test_position.txt");
+	Chessboard cb = Chessboard("test_castling.txt");
 	loop_board(cb);
 }
