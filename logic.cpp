@@ -329,10 +329,7 @@ bool can_castle(int target_row, Chessboard *chessboard, Colour opp_colour, vecto
 	{
 		int column_under_test = empty_cols[i];
 		if (!(board[target_row][column_under_test].piece == Piece::EMPTY))
-		{
-			//cout << "found occupied square at " << target_row << ',' << column_under_test << '\n';
 			return false;
-		}
 	}
 
 	// iterate rows { 2, 3, 4 } for queenside, and { 4, 5, 6 } for kingside
@@ -343,10 +340,7 @@ bool can_castle(int target_row, Chessboard *chessboard, Colour opp_colour, vecto
 		int column_under_test = unattacked_cols[i];
 		Square square_under_test = board[target_row][column_under_test];
 		if (count(attacked_squares.begin(), attacked_squares.end(), square_under_test) > 0)
-		{
-			//cout << "found attacked square at " << square_under_test.row << ',' << square_under_test.col << '\n';
 			return false;
-		}
 	}
 
 	return true;
@@ -604,6 +598,16 @@ bool test_for_checkmate_stalemate(Chessboard* cb, Colour player, Colour opp_colo
 }
 
 
+void switch_pieces(Chessboard *cb, vector<int> target_position, vector<int> destination_position)
+{
+	cb->board[destination_position[0]][destination_position[1]].piece = cb->board[target_position[0]][target_position[1]].piece;
+	cb->board[destination_position[0]][destination_position[1]].colour = cb->board[target_position[0]][target_position[1]].colour;
+	cb->board[destination_position[0]][destination_position[1]].has_moved = true;
+
+	cb->board[target_position[0]][target_position[1]] = Square(target_position[0], target_position[1]);
+}
+
+
 // Go through the move making procedure. Assume from prior checks that the move is valid.
 // 1. Make the move, storing the details of the moved piece and destination square
 // 2. Look for check, checkmate and stalemate.
@@ -621,12 +625,24 @@ Gamestate make_move(Chessboard* cb, vector<Square> valid_piece_moves, vector<int
 		if (valid_piece_moves[i].row == destination_position[0] && valid_piece_moves[i].col == destination_position[1])
 		{
 			// move the piece
-			cb->board[destination_position[0]][destination_position[1]].piece = cb->board[target_position[0]][target_position[1]].piece;
-			cb->board[destination_position[0]][destination_position[1]].colour = cb->board[target_position[0]][target_position[1]].colour;
-			cb->board[destination_position[0]][destination_position[1]].has_moved = true;
-
-			cb->board[target_position[0]][target_position[1]] = Square(target_position[0], target_position[1]);
+			switch_pieces(cb, target_position, destination_position);
 			break;
+		}
+	}
+
+	// check to see if we castled; if so, then the rook needs to be moved too.
+	Square moved_piece = cb->board[destination_position[0]][destination_position[1]];
+	if (moved_piece.piece == Piece::KING && target_position[1] == 4)
+	{
+		// Queenside
+		if (destination_position[1] == 2)
+		{
+			switch_pieces(cb, vector<int>({ target_position[0], 0 }), vector<int>({ target_position[0], 3 }));
+		}
+		// Kingside
+		else if (destination_position[1] == 6)
+		{
+			switch_pieces(cb, vector<int>({ target_position[0], 7 }), vector<int>({ target_position[0], 5 }));
 		}
 	}
 
@@ -643,7 +659,7 @@ Gamestate make_move(Chessboard* cb, vector<Square> valid_piece_moves, vector<int
 	(*cb).attacking_moves[Colour::WHITE] = find_all_attackable_squares(*cb, Colour::WHITE, 1);
 	(*cb).attacking_moves[Colour::BLACK] = find_all_attackable_squares(*cb, Colour::BLACK, 1);
 
-	//2. Look for check, checkmate and stalemate
+	// 2. Look for check, checkmate and stalemate
 	vector<Square> attackable_squares = parse_attackable_squares((*cb).attacking_moves[colour]);
 	bool is_check = false;
 	for (int i = 0; i < attackable_squares.size(); i++)
@@ -664,7 +680,7 @@ Gamestate make_move(Chessboard* cb, vector<Square> valid_piece_moves, vector<int
 		if (is_stalemate) return Gamestate::STALEMATE;
 	}
 
-	// At the end of the move, the active player colour is switched.
+	// 3. At the end of the move, the active player colour is switched.
 	cb->active_player = opp_colour;
 	if (is_check) return Gamestate::CHECK;
 	return Gamestate::NORMAL;
