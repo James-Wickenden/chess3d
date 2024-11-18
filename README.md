@@ -12,6 +12,7 @@ https://github.com/James-Wickenden/chess3d
 - Add camera controls w/ tutorial help with mouse/arrow key movement
 - Create the game logic for chess, based on building the incremental steps of a gameplay session:
 	- Adding a PGN to the game window
+	- Pawn promotions
 	- Saving/loading games
 - Sound effects!
 - Playing w a bot by API?

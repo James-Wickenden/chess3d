@@ -649,6 +649,55 @@ void switch_pieces(Chessboard *cb, vector<int> target_position, vector<int> dest
 }
 
 
+// Build the notation for the ply, e.g. "Nbxd2"
+string get_ply_notation(Chessboard* cb, vector<int> target_position, vector<int> destination_position, bool is_capture)
+{
+	string result_notation = "";
+
+	map<Piece, string> piece_notation_map = {
+		{ Piece::EMPTY,  " " },
+		{ Piece::PAWN,   "" },
+		{ Piece::ROOK,   "r"},
+		{ Piece::KNIGHT, "N"},
+		{ Piece::BISHOP, "B"},
+		{ Piece::QUEEN,  "Q"},
+		{ Piece::KING,   "K"}
+	};
+
+	// First get the section of the string for the moved piece
+	Square moved_piece = cb->board[destination_position[0]][destination_position[1]];
+	result_notation += piece_notation_map[moved_piece.piece];
+
+	// If multiple pieces could move to that location, we need to show more details about which one moved there.
+	vector<Square> potential_movers = parse_attackable_squares(cb->attacking_moves[cb->active_player]);
+	bool candidate_on_row = false;
+	bool candidate_on_col = false;
+
+	for (int i = 0; i < potential_movers.size(); i++)
+	{
+		Square potential_mover = potential_movers[i];
+
+		// We only care about pieces of the same type that could land in that square
+		if (potential_mover.piece != moved_piece.piece) continue;
+		
+		// Look to see if the piece is on the same rank or file as the piece that moved.
+		if (potential_mover.row == target_position[0]) candidate_on_row = true;
+		if (potential_mover.col == target_position[1]) candidate_on_col = true;
+	}
+
+	if (candidate_on_row) result_notation += convert_int_to_chessboard_square(target_position[1], target_position[0])[0];
+	if (candidate_on_col) result_notation += convert_int_to_chessboard_square(target_position[1], target_position[0])[1];
+
+	// If a piece was captured, we need to represent a capture
+	if (is_capture) result_notation += "x";
+
+	// Then append the coordinates of the landing square
+	result_notation += convert_int_to_chessboard_square(destination_position[1], destination_position[0]);
+
+	return result_notation;
+}
+
+
 // Go through the move making procedure. Assume from prior checks that the move is valid.
 // 1. Make the move, storing the details of the moved piece and destination square
 // 2. Look for check, checkmate and stalemate.
@@ -660,6 +709,7 @@ Gamestate make_move(Chessboard* cb, vector<Square> valid_piece_moves, vector<int
 	Colour colour = cb->board[target_position[0]][target_position[1]].colour;
 	Colour opp_colour = (colour == Colour::WHITE) ? Colour::BLACK : Colour::WHITE;
 	Square destination_piece = cb->board[destination_position[0]][destination_position[1]];
+	string ply_notation = "";
 
 	// 1. Make the move
 	for (int i = 0; i < valid_piece_moves.size(); i++)
@@ -667,7 +717,10 @@ Gamestate make_move(Chessboard* cb, vector<Square> valid_piece_moves, vector<int
 		if (valid_piece_moves[i].row == destination_position[0] && valid_piece_moves[i].col == destination_position[1])
 		{
 			// move the piece
+			bool is_capture = (cb->board[destination_position[0]][destination_position[1]].piece == Piece::EMPTY) ? false : true;
+
 			switch_pieces(cb, target_position, destination_position);
+			ply_notation = get_ply_notation(cb, target_position, destination_position, is_capture);
 			break;
 		}
 	}
@@ -681,11 +734,13 @@ Gamestate make_move(Chessboard* cb, vector<Square> valid_piece_moves, vector<int
 			if (target_position[1] == 4 && destination_position[1] == 2)
 			{
 				switch_pieces(cb, vector<int>({ target_position[0], 0 }), vector<int>({ target_position[0], 3 }));
+				ply_notation = "O-O-O";
 			}
 			// Kingside
 			else if (target_position[1] == 4 && destination_position[1] == 6)
 			{
 				switch_pieces(cb, vector<int>({ target_position[0], 7 }), vector<int>({ target_position[0], 5 }));
+				ply_notation = "O-O";
 			}
 			break;
 		case Piece::PAWN:
@@ -693,6 +748,7 @@ Gamestate make_move(Chessboard* cb, vector<Square> valid_piece_moves, vector<int
 			if (destination_piece.piece == Piece::EMPTY && destination_piece.col != target_position[1])
 			{
 				cb->board[target_position[0]][destination_position[1]] = Square(target_position[0], destination_position[1]);
+				ply_notation += "ep";
 			}
 			break;
 	}
@@ -723,6 +779,7 @@ Gamestate make_move(Chessboard* cb, vector<Square> valid_piece_moves, vector<int
 			is_check = true;
 			bool is_checkmate = test_for_checkmate_stalemate(cb, opp_colour, colour);
 			if (is_checkmate) return Gamestate::CHECKMATE;
+			ply_notation += (is_checkmate ? "#" : "+");
 		}
 	}
 	if (!is_check)
@@ -731,11 +788,29 @@ Gamestate make_move(Chessboard* cb, vector<Square> valid_piece_moves, vector<int
 		if (is_stalemate) return Gamestate::STALEMATE;
 	}
 
-	// 3. At the end of the move, the active player colour is switched.
+	// 3. Add the ply notation to the game's notation
+	string full_ply_notation = "";
+	if (cb->active_player == Colour::WHITE)
+	{
+		full_ply_notation += to_string(cb->move_no);
+		full_ply_notation += ".";
+		full_ply_notation += ply_notation;
+	}
+	else
+	{
+		full_ply_notation += " ";
+		full_ply_notation += ply_notation;
+		full_ply_notation += " ";
+	}
+	cb->notation += full_ply_notation;
+
+	// 4. At the end of the move, the active player colour is switched.
 	cb->active_player = opp_colour;
 
-	// 4. Increment the move counter.
+	// 5. Increment the move counter.
 	cb->move_no++;
+
+	
 
 	if (is_check) return Gamestate::CHECK;
 	return Gamestate::NORMAL;
@@ -768,6 +843,7 @@ void print_board(Chessboard chessboard, vector<Square> valid_moves, Gamestate ga
 		{ Piece::QUEEN,  'Q' },
 		{ Piece::KING,   'K' }
 	};
+	cout << chessboard.notation << '\n';
 
 	cout << "Current board : \n\n";
 	for (int i = 0; i < DIM_SIZE; i++)

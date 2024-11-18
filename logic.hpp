@@ -68,6 +68,7 @@ namespace LogicEngine
         std::map<Colour, std::vector<std::tuple<Square, std::vector<Square>>>> attacking_moves;
         Colour active_player;
         int move_no;
+        std::string notation;
 
         std::vector<Square> find_valid_moves(Square target);
 
