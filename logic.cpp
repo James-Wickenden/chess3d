@@ -657,7 +657,7 @@ string get_ply_notation(Chessboard* cb, vector<int> target_position, vector<int>
 	map<Piece, string> piece_notation_map = {
 		{ Piece::EMPTY,  " " },
 		{ Piece::PAWN,   "" },
-		{ Piece::ROOK,   "r"},
+		{ Piece::ROOK,   "R"},
 		{ Piece::KNIGHT, "N"},
 		{ Piece::BISHOP, "B"},
 		{ Piece::QUEEN,  "Q"},
@@ -669,24 +669,31 @@ string get_ply_notation(Chessboard* cb, vector<int> target_position, vector<int>
 	result_notation += piece_notation_map[moved_piece.piece];
 
 	// If multiple pieces could move to that location, we need to show more details about which one moved there.
-	vector<Square> potential_movers = parse_attackable_squares(cb->attacking_moves[cb->active_player]);
+	vector<tuple<Square, vector<Square>>> potential_movers = cb->attacking_moves[cb->active_player];
 	bool candidate_on_row = false;
 	bool candidate_on_col = false;
 
 	for (int i = 0; i < potential_movers.size(); i++)
 	{
-		Square potential_mover = potential_movers[i];
+		Square potential_mover = get<0>(potential_movers[i]);
 
+		// Don't inspect the same piece that we're moving
+		if ((potential_mover.piece == moved_piece.piece)
+			&& (potential_mover.row == target_position[0])
+			&& (potential_mover.col == target_position[1]))
+			continue;
 		// We only care about pieces of the same type that could land in that square
 		if (potential_mover.piece != moved_piece.piece) continue;
 		
 		// Look to see if the piece is on the same rank or file as the piece that moved.
-		if (potential_mover.row == target_position[0]) candidate_on_row = true;
-		if (potential_mover.col == target_position[1]) candidate_on_col = true;
+		if (potential_mover.row == target_position[0])
+			candidate_on_row = true;
+		if (potential_mover.col == target_position[1])
+			candidate_on_col = true;
 	}
 
-	if (candidate_on_row) result_notation += convert_int_to_chessboard_square(target_position[1], target_position[0])[0];
-	if (candidate_on_col) result_notation += convert_int_to_chessboard_square(target_position[1], target_position[0])[1];
+	if (candidate_on_row) result_notation += convert_int_to_chessboard_square(target_position[1], target_position[0])[1];
+	if (candidate_on_col) result_notation += convert_int_to_chessboard_square(target_position[1], target_position[0])[0];
 
 	// If a piece was captured, we need to represent a capture
 	if (is_capture) result_notation += "x";
@@ -1057,6 +1064,6 @@ int main()
 	//Chessboard cb = Chessboard();
 	//Chessboard cb = Chessboard("test_position.txt");
 	//Chessboard cb = Chessboard("test_castling.txt");
-	Chessboard cb = Chessboard("test_ep.txt");
+	Chessboard cb = Chessboard("test_notation.txt");
 	loop_board(cb);
 }
