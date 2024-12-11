@@ -649,6 +649,20 @@ void switch_pieces(Chessboard *cb, vector<int> target_position, vector<int> dest
 }
 
 
+bool is_dest_square_attackable_by_piece(tuple<Square, vector<Square>> potential_mover, vector<int> dest_position)
+{
+	vector<Square> potential_mover_destinations = get<1>(potential_mover);
+	for (int j = 0; j < potential_mover_destinations.size(); j++)
+	{
+		Square test_piece_dest = potential_mover_destinations[j];
+		if (test_piece_dest.col == dest_position[1] && test_piece_dest.row == dest_position[0])
+			return true;
+	}
+
+	return false;
+}
+
+
 // Build the notation for the ply, e.g. "Nbxd2"
 string get_ply_notation(Chessboard* cb, vector<int> target_position, vector<int> destination_position, bool is_capture)
 {
@@ -669,7 +683,9 @@ string get_ply_notation(Chessboard* cb, vector<int> target_position, vector<int>
 	result_notation += piece_notation_map[moved_piece.piece];
 
 	// If multiple pieces could move to that location, we need to show more details about which one moved there.
-	vector<tuple<Square, vector<Square>>> potential_movers = cb->attacking_moves[cb->active_player];
+	// In the case of pawns, we want the attacking moves if a piece was captured, but the valid moves if not.
+	// This is because a pawn moving forward should only have one option- directly in front. En passant does not affect this as it still involves capturing.
+	vector<tuple<Square, vector<Square>>> potential_movers = ( is_capture ? cb->attacking_moves[cb->active_player] : cb->valid_moves[cb->active_player] );
 	bool candidate_on_row = false;
 	bool candidate_on_col = false;
 
@@ -687,14 +703,18 @@ string get_ply_notation(Chessboard* cb, vector<int> target_position, vector<int>
 		
 		// Look to see if the piece is on the same rank or file as the piece that moved.
 		if (potential_mover.row == target_position[0])
-			candidate_on_row = true;
+		{
+			if (is_dest_square_attackable_by_piece(potential_movers[i], destination_position))
+				candidate_on_row = true;
+		}
 		if (potential_mover.col == target_position[1])
-			candidate_on_col = true;
+			if (is_dest_square_attackable_by_piece(potential_movers[i], destination_position))
+				candidate_on_col = true;
 	}
 
-	if (candidate_on_row) result_notation += convert_int_to_chessboard_square(target_position[1], target_position[0])[1];
 	if (candidate_on_col) result_notation += convert_int_to_chessboard_square(target_position[1], target_position[0])[0];
-
+	if (candidate_on_row) result_notation += convert_int_to_chessboard_square(target_position[1], target_position[0])[1];
+	
 	// If a piece was captured, we need to represent a capture
 	if (is_capture) result_notation += "x";
 
