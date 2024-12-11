@@ -712,8 +712,9 @@ string get_ply_notation(Chessboard* cb, vector<int> target_position, vector<int>
 				candidate_on_col = true;
 	}
 
-	if (candidate_on_col) result_notation += convert_int_to_chessboard_square(target_position[1], target_position[0])[0];
-	if (candidate_on_row) result_notation += convert_int_to_chessboard_square(target_position[1], target_position[0])[1];
+	if (candidate_on_row) result_notation += convert_int_to_chessboard_square(target_position[1], target_position[0])[0];
+	if (candidate_on_col) result_notation += convert_int_to_chessboard_square(target_position[1], target_position[0])[1];
+	
 	
 	// If a piece was captured, we need to represent a capture
 	if (is_capture) result_notation += "x";
@@ -1081,9 +1082,9 @@ void loop_board(Chessboard cb)
 
 int main()
 {
-	//Chessboard cb = Chessboard();
+	Chessboard cb = Chessboard();
 	//Chessboard cb = Chessboard("test_position.txt");
 	//Chessboard cb = Chessboard("test_castling.txt");
-	Chessboard cb = Chessboard("test_notation.txt");
+	//Chessboard cb = Chessboard("test_notation.txt");
 	loop_board(cb);
 }

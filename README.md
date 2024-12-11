@@ -20,7 +20,6 @@ https://github.com/James-Wickenden/chess3d
 ## In progress:
 
 - Create the game logic for chess, based on building the incremental steps of a gameplay session:
-	- Storing moves as notation
 	- Undoing moves with a gamestate stack
 - Create low poly 3d chess models
 
@@ -40,6 +39,7 @@ https://github.com/James-Wickenden/chess3d
 	- Preventing castling through check
 	- Advanced moves: en passant
 	- Advanced moves: castling
+	- Storing moves as notation
 
 ---
 
