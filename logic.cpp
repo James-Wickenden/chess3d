@@ -1252,10 +1252,10 @@ void loop_board(Chessboard cb)
 int main()
 {
 	//Chessboard cb = Chessboard();
-	//Chessboard cb = Chessboard("test_position.txt");
-	//Chessboard cb = Chessboard("test_castling.txt");
-	//Chessboard cb = Chessboard("test_notation.txt");
-	//Chessboard cb = Chessboard("test_promotion.txt");
-	Chessboard cb = Chessboard("test_stalemate.txt");
+	//Chessboard cb = Chessboard("test_positions/test_position.txt");
+	//Chessboard cb = Chessboard("test_positions/test_castling.txt");
+	//Chessboard cb = Chessboard("test_positions/test_notation.txt");
+	//Chessboard cb = Chessboard("test_positions/test_promotion.txt");
+	Chessboard cb = Chessboard("test_positions/test_stalemate.txt");
 	loop_board(cb);
 }
