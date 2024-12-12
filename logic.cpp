@@ -1128,9 +1128,6 @@ void loop_board(Chessboard cb)
 	stack<Chessboard> board_stack;
 	board_stack.push(cb);
 
-	cb.white_name = random_string(5);
-	cb.black_name = random_string(5);
-
 	// Find the valid move lists for each player
 	cb.valid_moves[Colour::WHITE] = find_all_attackable_squares(cb, Colour::WHITE, 0);
 	cb.valid_moves[Colour::BLACK] = find_all_attackable_squares(cb, Colour::BLACK, 0);
@@ -1141,7 +1138,7 @@ void loop_board(Chessboard cb)
 	cout << "\033[1;32mNEW GAME\033[0m\n";
 	cout << "\033[1;33m" + cb.white_name + " vs " + cb.black_name + "\n";
 	cout << "\033[1;33mWhite moves first.\n";
-	cout << "When inputting target square:\n  - Type 'undo' to undo move.\n  - Type 'save' to save PGN file.\033[0m\n\n";
+	cout << "When inputting target square:\n  - Type 'undo' to undo move.\n  - Type 'save' to save PGN file.\n  - Type 'exit' to return to menu.\033[0m\n\n";
 
 	while(true)
 	{
@@ -1184,6 +1181,10 @@ void loop_board(Chessboard cb)
 			{
 				cout << "\033[1;31mSaving game.\033[0m\n";
 				save_game(cb);
+			}
+			else if (move_choice == "exit")
+			{
+				return;
 			}
 			else
 			{
@@ -1249,13 +1250,93 @@ void loop_board(Chessboard cb)
 }
 
 
+// Parse a game file and load it, then read through all the PGN moves to arrive at the current gamestate.
+void load_game(fs::path gamepath)
+{
+	ifstream t(gamepath);
+	string gamedata((istreambuf_iterator<char>(t)),
+		istreambuf_iterator<char>());
+
+	cout << gamedata;
+
+}
+
+
+// Defines the text based entry point, including loading games.
+void menu_handler()
+{
+	bool valid_menu_choice = false;
+	while (!valid_menu_choice)
+	{
+		cout << "\x1B[2J\x1B[H";
+		cout << "\033[1;33mchess3d by Mammoth [https://github.com/James-Wickenden/chess3d]\033[0m\n";
+		cout << "Options [1/2/3]:\n";
+		cout << "    1. New game\n    2. Test position\n    3. Load game\n\n";
+		cout << "\033[1;32mEnter choice: \033[0m";
+
+		string menu_choice;
+		getline(cin, menu_choice);
+		if (menu_choice.size() == 0) continue;
+
+		Chessboard cb;
+		string white_name, black_name, submenu_choice;
+
+		map<char, string> test_board_map = {
+					{ '1', "test_positions/test_position.txt" },
+					{ '2', "test_positions/test_ep.txt" },
+					{ '3', "test_positions/test_castling.txt" },
+					{ '4', "test_positions/test_notation.txt" },
+					{ '5', "test_positions/test_promotion.txt" },
+					{ '6', "test_positions/test_stalemate.txt" }
+		};
+
+		switch (menu_choice[0])
+		{
+			case '1':
+				cout << "White player name: ";
+				getline(cin, white_name);
+				cout << "Black player name: ";
+				getline(cin, black_name);
+				cout << "\x1B[2J\x1B[H";
+
+				cb = Chessboard();
+				cb.white_name = white_name;
+				cb.black_name = black_name;
+
+				loop_board(cb);
+				break;
+			case '2':
+				cout << "Select test board [1/2/3/4/5/6]:\n";
+				cout << "  1. castling\n  2. en passant\n  3. notation\n  4. position\n  5. promotion\n  6. stalemate\n";
+				getline(cin, submenu_choice);
+				cout << "\x1B[2J\x1B[H";
+
+				cb = Chessboard(test_board_map[submenu_choice[0]]);
+				cb.white_name = "test_white";
+				cb.black_name = "test_black";
+
+				loop_board(cb);
+				break;
+			case '3':
+				fs::path p = fs::current_path().append("games");
+				for (const auto& entry : fs::directory_iterator(p))
+				{
+					string gamepath = entry.path().string();
+					string base_filename = gamepath.substr(gamepath.find_last_of("/\\") + 1);
+					cout << "  " << base_filename + '\n';
+				}
+
+				cout << "\nSelect game with filename: ";
+				getline(cin, submenu_choice);
+				if (fs::exists(p.append(submenu_choice)))
+					load_game(p);
+				break;
+		}
+	}
+}
+
+
 int main()
 {
-	//Chessboard cb = Chessboard();
-	//Chessboard cb = Chessboard("test_positions/test_position.txt");
-	//Chessboard cb = Chessboard("test_positions/test_castling.txt");
-	//Chessboard cb = Chessboard("test_positions/test_notation.txt");
-	//Chessboard cb = Chessboard("test_positions/test_promotion.txt");
-	Chessboard cb = Chessboard("test_positions/test_stalemate.txt");
-	loop_board(cb);
+	menu_handler();
 }
