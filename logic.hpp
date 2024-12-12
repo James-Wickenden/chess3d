@@ -11,6 +11,8 @@
 #include <tuple>
 #include <fstream>
 #include <stack>
+#include <filesystem>
+#include <ctime>
 
 namespace LogicEngine 
 {
@@ -61,6 +63,8 @@ namespace LogicEngine
 
     // Define the board as a 2-d array of squares. 
     // Squares can be empty or occupied by a piece.
+    // Also maintains metadata for the game:
+    //    The game notation, move nuumber, active player, black and white player names, and the result.
     class Chessboard
     {
     public:
@@ -69,7 +73,7 @@ namespace LogicEngine
         std::map<Colour, std::vector<std::tuple<Square, std::vector<Square>>>> attacking_moves;
         Colour active_player;
         int move_no;
-        std::string notation;
+        std::string notation, white_name, black_name, result;
 
         std::vector<Square> find_valid_moves(Square target);
 

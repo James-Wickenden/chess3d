@@ -4,6 +4,7 @@
 
 using namespace std;
 using namespace LogicEngine;
+namespace fs = std::filesystem;
 
 const int DIM_SIZE = 8; // size of the chessboard
 
@@ -997,11 +998,87 @@ Chessboard::Chessboard(string filename)
 }
 
 
+// Return today's date in the form YYYY.MM.DD
+string get_formatted_date()
+{
+	time_t timestamp;
+	time(&timestamp);
+	struct tm* timeinfo;
+	char formatted_date[12];
+	timeinfo = localtime(&timestamp);
+	strftime(formatted_date, 12, "%Y.%m.%d", timeinfo);
+
+	return formatted_date;
+}
+
+
+// Attempt to save the game. Returns true if successful, and false if not.
+// The game is saved as a .PGN file containing notation and metadata.
+bool save_game(Chessboard cb)
+{
+	string game_string_data = "";
+
+	// ensure that the game directory exists
+	fs::path game_path = fs::current_path().append("games");
+	if (!fs::is_directory(game_path))
+		fs::create_directory(game_path);
+
+	// Metadata starts with seven tag pairs, formatted as [tag "value"]
+	// These are event, site, date, round, white, black, result
+	string tag_roster = "";
+	tag_roster += "[Event \"James-Wickenden/chess3d Match\"]\n";
+	tag_roster += "[Site \"https://github.com/James-Wickenden/chess3d\"]\n";
+	tag_roster += "[Date \"" + get_formatted_date() + "\"]\n";
+	tag_roster += "[Round \"1\"]\n";
+	tag_roster += "[White \"" + cb.white_name + "\"]\n";
+	tag_roster += "[Black \"" + cb.black_name + "\"]\n";
+	tag_roster += "[Result \"" + cb.result + "\"]\n\n";
+
+	game_string_data += tag_roster;
+
+	// Then, we dump the PGN as stored in the chessboard object, ending with the game result.
+	game_string_data += cb.notation;
+	game_string_data += cb.result + '\n';
+
+	ofstream gamefile;
+	fs::path filename = fs::current_path().append("games").append(
+		get_formatted_date() + "_" 
+		+ cb.white_name + "_"
+		+ cb.black_name + ".pgn");
+	gamefile.open(filename);
+	gamefile << game_string_data;
+	gamefile.close();
+
+	return true;
+}
+
+
+// Return an alphanumeric string of random characters length n.
+string random_string(size_t length)
+{
+	auto randchar = []() -> char
+	{
+		const char charset[] =
+			"0123456789"
+			"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+			"abcdefghijklmnopqrstuvwxyz";
+		const size_t max_index = (sizeof(charset) - 1);
+		return charset[rand() % max_index];
+	};
+	string str(length, 0);
+	generate_n(str.begin(), length, randchar);
+	return str;
+}
+
+
 // Main game loop
 void loop_board(Chessboard cb)
 {
 	stack<Chessboard> board_stack;
 	board_stack.push(cb);
+
+	cb.white_name = random_string(5);
+	cb.black_name = random_string(5);
 
 	// Find the valid move lists for each player
 	cb.valid_moves[Colour::WHITE] = find_all_attackable_squares(cb, Colour::WHITE, 0);
@@ -1011,6 +1088,7 @@ void loop_board(Chessboard cb)
 	cb.attacking_moves[Colour::BLACK] = find_all_attackable_squares(cb, Colour::BLACK, 1);
 
 	cout << "\033[1;32mNEW GAME\033[0m\n";
+	cout << "\033[1;33m" + cb.white_name + " vs " + cb.black_name + "\n";
 	cout << "\033[1;33mWhite moves first.\n";
 	cout << "When inputting target square:\n  - Type 'undo' to undo move.\n  - Type 'save' to save PGN file.\033[0m\n\n";
 
@@ -1053,7 +1131,8 @@ void loop_board(Chessboard cb)
 			}
 			else if (move_choice == "save")
 			{
-				cout << "\033[1;31mWIP!\033[0m\n";
+				cout << "\033[1;31mSaving game.\033[0m\n";
+				save_game(cb);
 			}
 			else
 			{
