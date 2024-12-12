@@ -1255,6 +1255,7 @@ int main()
 	//Chessboard cb = Chessboard("test_position.txt");
 	//Chessboard cb = Chessboard("test_castling.txt");
 	//Chessboard cb = Chessboard("test_notation.txt");
-	Chessboard cb = Chessboard("test_promotion.txt");
+	//Chessboard cb = Chessboard("test_promotion.txt");
+	Chessboard cb = Chessboard("test_stalemate.txt");
 	loop_board(cb);
 }
