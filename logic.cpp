@@ -535,7 +535,16 @@ vector<Square> trim_valid_moves(Square target, vector<vector<Square>> board, Col
 				{
 					Square king = test_board[row][col];
 					if (!is_king_attacked(king, test_board, opp_colour))
-						confirmed_moves.push_back(prosp_move);
+					{
+						vector<Square> king_knight_moves = get_prospective_knight_moves(king, test_board, opp_colour);
+						bool king_attacked_by_knight = false;
+						for (int i = 0; i < king_knight_moves.size(); i++)
+						{
+							if (king_knight_moves[i].piece == Piece::KNIGHT) king_attacked_by_knight = true;
+						}
+						if (!king_attacked_by_knight) confirmed_moves.push_back(prosp_move);
+					}
+						
 				}
 			}
 		}

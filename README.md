@@ -21,7 +21,6 @@ https://github.com/James-Wickenden/chess3d
 
 - Create the game logic for chess, based on building the incremental steps of a gameplay session:
 	- Saving/loading games
-	- Pawn promotions
 
 - Create low poly 3d chess models
 
@@ -43,6 +42,7 @@ https://github.com/James-Wickenden/chess3d
 	- Advanced moves: castling
 	- Storing moves as notation
 	- Undoing moves with a gamestate stack
+	- Pawn promotions
 
 ---
 
