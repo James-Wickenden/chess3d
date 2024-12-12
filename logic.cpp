@@ -96,6 +96,10 @@ vector<Square> get_pawn_attacking_squares(Square target, vector<vector<Square>> 
 {
 	vector<Square> pawn_attacking_squares;
 
+	// handle case where pawn is at the end of the board and cannot attack the squares in front
+	if ((target.colour == Colour::WHITE && target.row == 7) || (target.colour == Colour::BLACK && target.row == 0))
+		return pawn_attacking_squares;
+
 	if (target.col > 0) {
 		if (board[target.row + dir][target.col - 1].colour == opp_colour) {
 			pawn_attacking_squares.push_back(board[target.row + dir][target.col - 1]);
@@ -176,7 +180,6 @@ vector<Square> get_prospective_pawn_moves(Square target, vector<vector<Square>> 
 			prospective_moves.push_back(board[target.row + dir][target.col + 1]);
 	}
 	
-
 	return prospective_moves;
 }
 
@@ -664,11 +667,9 @@ bool is_dest_square_attackable_by_piece(tuple<Square, vector<Square>> potential_
 }
 
 
-// Build the notation for the ply, e.g. "Nbxd2"
-string get_ply_notation(Chessboard* cb, vector<int> target_position, vector<int> destination_position, bool is_capture)
+// Reference the piece notation map
+string get_piece_notation_map(Piece p)
 {
-	string result_notation = "";
-
 	map<Piece, string> piece_notation_map = {
 		{ Piece::EMPTY,  " " },
 		{ Piece::PAWN,   "" },
@@ -679,9 +680,18 @@ string get_ply_notation(Chessboard* cb, vector<int> target_position, vector<int>
 		{ Piece::KING,   "K"}
 	};
 
+	return piece_notation_map[p];
+}
+
+
+// Build the notation for the ply, e.g. "Nbxd2"
+string get_ply_notation(Chessboard* cb, vector<int> target_position, vector<int> destination_position, bool is_capture)
+{
+	string result_notation = "";
+
 	// First get the section of the string for the moved piece
 	Square moved_piece = cb->board[destination_position[0]][destination_position[1]];
-	result_notation += piece_notation_map[moved_piece.piece];
+	result_notation += get_piece_notation_map(moved_piece.piece);
 
 	// If multiple pieces could move to that location, we need to show more details about which one moved there.
 	// In the case of pawns, we want the attacking moves if a piece was captured, but the valid moves if not.
@@ -724,6 +734,30 @@ string get_ply_notation(Chessboard* cb, vector<int> target_position, vector<int>
 	result_notation += convert_int_to_chessboard_square(destination_position[1], destination_position[0]);
 
 	return result_notation;
+}
+
+
+// Promote a pawn within the terminal by calling for input, and halting until a valid input is made. Then return the selection.
+Piece get_pawn_promotion_terminal()
+{
+	string promotion_choice;
+	map<string, Piece> piece_string_map =
+	{
+		{ "QUEEN",  Piece::QUEEN },
+		{ "ROOK",   Piece::ROOK },
+		{ "BISHOP", Piece::BISHOP },
+		{ "KNIGHT", Piece::KNIGHT }
+	};
+
+	while (true)
+	{
+		cout << "Choose piece to promote to [Queen/Rook/Bishop/Knight]: ";
+		getline(cin, promotion_choice);
+		std::transform(promotion_choice.begin(), promotion_choice.end(), promotion_choice.begin(), ::toupper);
+		if (piece_string_map.count(promotion_choice) > 0) return piece_string_map.at(promotion_choice);
+	}
+
+	return Piece::EMPTY;
 }
 
 
@@ -782,6 +816,14 @@ Gamestate make_move(Chessboard* cb, vector<Square> valid_piece_moves, vector<int
 			break;
 	}
 	
+	// If the moved piece is a pawn moving to the opposite back rank, we must intercept for promotion.
+	if (moved_piece.piece == Piece::PAWN && moved_piece.row == (moved_piece.colour == Colour::WHITE ? 7 : 0))
+	{
+		Piece promotion_choice = get_pawn_promotion_terminal();
+		cb->board[destination_position[0]][destination_position[1]].piece = promotion_choice;
+		ply_notation += get_piece_notation_map(promotion_choice);
+	}
+
 	// Find the valid and attacking move lists for each player
 	// Attacking moves do not include the squares that pawns can move to, as they are not attacking these squares.
 	// We store these two lists separately so that we can use the valid moves list to find squares to move to,
@@ -1154,7 +1196,6 @@ void loop_board(Chessboard cb)
 		cout << "Moves: ";
 
 		vector<Square> vms = cb.find_valid_moves(cb.board[target_position[0]][target_position[1]]);
-		//vector<Square> vms = parse_attackable_squares(cb.valid_moves[cb.active_player]);
 		for (int i = 0; i < vms.size(); i++)
 		{
 			cout << convert_int_to_chessboard_square(vms[i].col, vms[i].row) << ' ';
@@ -1201,9 +1242,10 @@ void loop_board(Chessboard cb)
 
 int main()
 {
-	Chessboard cb = Chessboard();
+	//Chessboard cb = Chessboard();
 	//Chessboard cb = Chessboard("test_position.txt");
 	//Chessboard cb = Chessboard("test_castling.txt");
 	//Chessboard cb = Chessboard("test_notation.txt");
+	Chessboard cb = Chessboard("test_promotion.txt");
 	loop_board(cb);
 }
