@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <tuple>
 #include <fstream>
+#include <stack>
 
 namespace LogicEngine 
 {

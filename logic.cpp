@@ -1000,6 +1000,9 @@ Chessboard::Chessboard(string filename)
 // Main game loop
 void loop_board(Chessboard cb)
 {
+	stack<Chessboard> board_stack;
+	board_stack.push(cb);
+
 	// Find the valid move lists for each player
 	cb.valid_moves[Colour::WHITE] = find_all_attackable_squares(cb, Colour::WHITE, 0);
 	cb.valid_moves[Colour::BLACK] = find_all_attackable_squares(cb, Colour::BLACK, 0);
@@ -1007,6 +1010,9 @@ void loop_board(Chessboard cb)
 	cb.attacking_moves[Colour::WHITE] = find_all_attackable_squares(cb, Colour::WHITE, 1);
 	cb.attacking_moves[Colour::BLACK] = find_all_attackable_squares(cb, Colour::BLACK, 1);
 
+	cout << "\033[1;32mNEW GAME\033[0m\n";
+	cout << "\033[1;33mWhite moves first.\n";
+	cout << "When inputting target square:\n  - Type 'undo' to undo move.\n  - Type 'save' to save PGN file.\033[0m\n\n";
 
 	while(true)
 	{
@@ -1020,11 +1026,42 @@ void loop_board(Chessboard cb)
 
 		print_board(cb, vector<Square>(), Gamestate::NORMAL);
 
-		// first select the piece to move and get a list of the squares the piece can move to
-		string target_square, destination_square;
-		cout << "Input target square: ";
-		getline(cin, target_square);
+		bool move_selected = false;
+		string target_square, destination_square, move_choice;
+		while (!move_selected)
+		{
+			// first select the piece to move and get a list of the squares the piece can move to
+			cout << "Input target square or choice: ";
+			getline(cin, move_choice);
 
+			if (move_choice == "") continue;
+			else if (move_choice == "undo")
+			{
+				// Handle the 'undo' operation.
+				if (board_stack.size() <= 1)
+				{
+					cout << "\033[1;31mNo more moves to undo.\033[0m\n";
+					continue;
+				}
+					
+				cout << "\033[1;31mUndoing move.\033[0m\n";
+				board_stack.pop();
+				cb = board_stack.top();
+				print_board(cb, vector<Square>(), Gamestate::NORMAL);
+
+				continue;
+			}
+			else if (move_choice == "save")
+			{
+				cout << "\033[1;31mWIP!\033[0m\n";
+			}
+			else
+			{
+				target_square = move_choice;
+				move_selected = true;
+			}
+		}
+		
 		vector<int> target_position = convert_chessboard_square_to_int(target_square);
 		if (cb.board[target_position[0]][target_position[1]].colour != cb.active_player)
 		{
@@ -1056,6 +1093,9 @@ void loop_board(Chessboard cb)
 
 		// finally: make the move
 		Gamestate gs = make_move(&cb, vms, target_position, destination_position);
+
+		// Push the new board to the stack of boards. This includes the notation stack, state of the board and pieces, and game metadata e.g. move no.
+		board_stack.push(cb);
 
 		// Handle the result of making the move
 		string winner;
