@@ -127,7 +127,6 @@ bool can_en_passant(Square pawn, vector<vector<Square>> board, Colour opp_colour
 		return false;
 
 	// If the last move was the pawn, we can en passant it
-	// TODO: this does not handle for the case of pawns moving two tiles in two separate moves!
 	if ((board[pawn.row][test_col].when_moved.size() == 1) && (board[pawn.row][test_col].when_moved.back() == move_no - 1))
 		return true;
 	else
@@ -166,7 +165,6 @@ vector<Square> get_prospective_pawn_moves(Square target, vector<vector<Square>> 
 		prospective_moves.insert(prospective_moves.end(), pawn_attacking_Squares.begin(), pawn_attacking_Squares.end());
 	}
 
-	//todo: en passant prospective move
 	// Check for en passant. For this, the piece must have advanced exactly three ranks: white pawns must be on rank 5 and black on rank 4
 	// Then, an opponent pawn must have moved two ranks forward in the previous move to be adjacent to the pawn.
 	// If so, we can move the pawn diagonally and capture the opponent pawn.
@@ -728,8 +726,23 @@ string get_ply_notation(Chessboard* cb, vector<int> target_position, vector<int>
 				candidate_on_row = true;
 		}
 		if (potential_mover.col == target_position[1])
+		{
 			if (is_dest_square_attackable_by_piece(potential_movers[i], destination_position))
 				candidate_on_col = true;
+		}
+
+		// For knights, this isn't necessarily true and we must perform more tests to dig a level deeper.
+		// So, for the potential mover, go straight to the is_dest_square_attackable_by_piece() function.
+		// NOTE there is a bug here where a player with 3 knights can get incorrect notation. but who cares
+		if (potential_mover.piece == Piece::KNIGHT && !candidate_on_col)
+		{
+			if (is_dest_square_attackable_by_piece(potential_movers[i], destination_position))
+				candidate_on_row = true;
+		}
+
+		// If the piece is a pawn and theres a capture we must always include the file.
+		if (is_capture && moved_piece.piece == Piece::PAWN && !candidate_on_col)
+			candidate_on_row = true;
 	}
 
 	if (candidate_on_row) result_notation += convert_int_to_chessboard_square(target_position[1], target_position[0])[0];
@@ -872,7 +885,7 @@ Gamestate make_move(Chessboard* cb, vector<Square> valid_piece_moves, vector<int
 	string full_ply_notation = "";
 	if (cb->active_player == Colour::WHITE)
 	{
-		full_ply_notation += to_string(cb->move_no);
+		full_ply_notation += to_string((cb->move_no + 1) / 2);
 		full_ply_notation += ".";
 		full_ply_notation += ply_notation;
 	}
@@ -1079,7 +1092,7 @@ bool save_game(Chessboard cb)
 	string tag_roster = "";
 	tag_roster += "[Event \"James-Wickenden/chess3d Match\"]\n";
 	tag_roster += "[Site \"https://github.com/James-Wickenden/chess3d\"]\n";
-	tag_roster += "[Date \"" + get_formatted_date() + "\"]\n";
+	tag_roster += "[Date \"" + cb.date + "\"]\n";
 	tag_roster += "[Round \"1\"]\n";
 	tag_roster += "[White \"" + cb.white_name + "\"]\n";
 	tag_roster += "[Black \"" + cb.black_name + "\"]\n";
@@ -1093,7 +1106,7 @@ bool save_game(Chessboard cb)
 
 	ofstream gamefile;
 	fs::path filename = fs::current_path().append("games").append(
-		get_formatted_date() + "_" 
+		cb.date + "_" 
 		+ cb.white_name + "_"
 		+ cb.black_name + ".pgn");
 	gamefile.open(filename);
@@ -1134,6 +1147,8 @@ void loop_board(Chessboard cb)
 
 	cb.attacking_moves[Colour::WHITE] = find_all_attackable_squares(cb, Colour::WHITE, 1);
 	cb.attacking_moves[Colour::BLACK] = find_all_attackable_squares(cb, Colour::BLACK, 1);
+
+	cb.date = get_formatted_date();
 
 	cout << "\033[1;32mNEW GAME\033[0m\n";
 	cout << "\033[1;33m" + cb.white_name + " vs " + cb.black_name + "\n";
@@ -1250,15 +1265,47 @@ void loop_board(Chessboard cb)
 }
 
 
+vector<string> split(const string& s, const string& delimiter) {
+	vector<string> tokens;
+	size_t last = 0;
+	size_t next = 0;
+	while ((next = s.find(delimiter, last)) != string::npos)
+	{   
+		string token = s.substr(last, next - last);
+		tokens.push_back(token);
+		last = next + 1;
+	}
+
+	tokens.push_back(s.substr(last));
+
+	return tokens;
+}
+
+
 // Parse a game file and load it, then read through all the PGN moves to arrive at the current gamestate.
 void load_game(fs::path gamepath)
 {
+	// read the PGN file
 	ifstream t(gamepath);
 	string gamedata((istreambuf_iterator<char>(t)),
 		istreambuf_iterator<char>());
 
-	cout << gamedata;
+	// split the PGN file into its metadata and movedata
+	vector<string> gamedata_elements = split(gamedata, "\n");
+	
+	// assign metadata to the game object
+	Chessboard cb = Chessboard();
+	cb.white_name = split(gamedata_elements[4], "\"")[1];
+	cb.black_name = split(gamedata_elements[5], "\"")[1];
+	cb.date = split(gamedata_elements[2], "\"")[1];
+	cb.result = split(gamedata_elements[6], "\"")[1];
+	// todo - note we need to split based on the result here to handle viewing finished games.
+	
+	// parse the moves
+	string movedata = gamedata_elements[8];
+	cb.notation = movedata;
 
+	vector<string> pgn_moves = split(movedata, " ");
 }
 
 
@@ -1284,8 +1331,8 @@ void menu_handler()
 		map<char, string> test_board_map = {
 					{ '1', "test_positions/test_position.txt" },
 					{ '2', "test_positions/test_ep.txt" },
-					{ '3', "test_positions/test_castling.txt" },
-					{ '4', "test_positions/test_notation.txt" },
+					{ '3', "test_positions/test_notation.txt" },
+					{ '4', "test_positions/test_castling.txt" },
 					{ '5', "test_positions/test_promotion.txt" },
 					{ '6', "test_positions/test_stalemate.txt" }
 		};
@@ -1307,7 +1354,7 @@ void menu_handler()
 				break;
 			case '2':
 				cout << "Select test board [1/2/3/4/5/6]:\n";
-				cout << "  1. castling\n  2. en passant\n  3. notation\n  4. position\n  5. promotion\n  6. stalemate\n";
+				cout << "  1. position\n  2. en passant\n  3. notation\n  4. castling\n  5. promotion\n  6. stalemate\n";
 				getline(cin, submenu_choice);
 				cout << "\x1B[2J\x1B[H";
 
@@ -1319,16 +1366,21 @@ void menu_handler()
 				break;
 			case '3':
 				fs::path p = fs::current_path().append("games");
+				map<string, string> id_game_map;
+				int cur_id = 1;
 				for (const auto& entry : fs::directory_iterator(p))
 				{
 					string gamepath = entry.path().string();
 					string base_filename = gamepath.substr(gamepath.find_last_of("/\\") + 1);
-					cout << "  " << base_filename + '\n';
+					cout << cur_id << ".  " << base_filename + '\n';
+					id_game_map[to_string(cur_id)] = base_filename;
+					cur_id++;
 				}
 
-				cout << "\nSelect game with filename: ";
+				cout << "\nSelect game with id: ";
 				getline(cin, submenu_choice);
-				if (fs::exists(p.append(submenu_choice)))
+				string chosen_file = id_game_map[submenu_choice];
+				if (fs::exists(p.append(chosen_file)))
 					load_game(p);
 				break;
 		}
