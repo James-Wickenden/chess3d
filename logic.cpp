@@ -1123,7 +1123,6 @@ string random_string(size_t length)
 	auto randchar = []() -> char
 	{
 		const char charset[] =
-			"0123456789"
 			"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 			"abcdefghijklmnopqrstuvwxyz";
 		const size_t max_index = (sizeof(charset) - 1);
@@ -1326,7 +1325,7 @@ void menu_handler()
 		if (menu_choice.size() == 0) continue;
 
 		Chessboard cb;
-		string white_name, black_name, submenu_choice;
+		string white_name, black_name, tmp_name, submenu_choice;
 
 		map<char, string> test_board_map = {
 					{ '1', "test_positions/test_position.txt" },
@@ -1340,10 +1339,14 @@ void menu_handler()
 		switch (menu_choice[0])
 		{
 			case '1':
-				cout << "White player name: ";
-				getline(cin, white_name);
-				cout << "Black player name: ";
-				getline(cin, black_name);
+				white_name = random_string(8);
+				black_name = random_string(8);
+				cout << "White player name [" + white_name + "]: ";
+				getline(cin, tmp_name);
+				if (tmp_name != "") white_name = tmp_name;
+				cout << "Black player name [" + black_name + "]: ";
+				getline(cin, tmp_name);
+				if (tmp_name != "") black_name = tmp_name;
 				cout << "\x1B[2J\x1B[H";
 
 				cb = Chessboard();
@@ -1390,5 +1393,6 @@ void menu_handler()
 
 int main()
 {
+	srand(time(NULL));
 	menu_handler();
 }
