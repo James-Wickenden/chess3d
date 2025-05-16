@@ -1,7 +1,6 @@
 // logic.cpp
 
 #include "logic.hpp"
-#include "pgnp/includes/pgnp.hpp"
 
 using namespace std;
 using namespace LogicEngine;
@@ -1028,22 +1027,6 @@ Chessboard::Chessboard(string filename)
 {
 	string setup_position = read_board_setup_file(filename);
 
-	map<char, tuple<Piece, Colour>> piece_map = {
-		{ '_', {Piece::EMPTY,  Colour::EMPTY }},
-		{ 'P', {Piece::PAWN,   Colour::WHITE }},
-		{ 'R', {Piece::ROOK,   Colour::WHITE }},
-		{ 'N', {Piece::KNIGHT, Colour::WHITE }},
-		{ 'B', {Piece::BISHOP, Colour::WHITE }},
-		{ 'Q', {Piece::QUEEN,  Colour::WHITE }},
-		{ 'K', {Piece::KING,   Colour::WHITE }},
-		{ 'p', {Piece::PAWN,   Colour::BLACK }},
-		{ 'r', {Piece::ROOK,   Colour::BLACK }},
-		{ 'n', {Piece::KNIGHT, Colour::BLACK }},
-		{ 'b', {Piece::BISHOP, Colour::BLACK }},
-		{ 'q', {Piece::QUEEN,  Colour::BLACK }},
-		{ 'k', {Piece::KING,   Colour::BLACK }}
-	};
-
 	vector<Square> row(DIM_SIZE);
 	vector<vector<Square>> b(DIM_SIZE, row);
 	active_player = Colour::WHITE;
@@ -1136,7 +1119,7 @@ string random_string(size_t length)
 
 
 // Main game loop
-void loop_board(Chessboard cb)
+void loop_board(Chessboard cb, bool is_new_game)
 {
 	stack<Chessboard> board_stack;
 	board_stack.push(cb);
@@ -1148,11 +1131,11 @@ void loop_board(Chessboard cb)
 	cb.attacking_moves[Colour::WHITE] = find_all_attackable_squares(cb, Colour::WHITE, 1);
 	cb.attacking_moves[Colour::BLACK] = find_all_attackable_squares(cb, Colour::BLACK, 1);
 
-	cb.date = get_formatted_date();
-
-	cout << "\033[1;32mNEW GAME\033[0m\n";
+	string active_player_str = (cb.active_player == Colour::WHITE) ? "White" : "Black";
+	if (is_new_game) cout << "\033[1;32mNEW GAME\033[0m\n";
+	else cout << "\033[1;32mLOADED GAME\033[0m\n";
 	cout << "\033[1;33m" + cb.white_name + " vs " + cb.black_name + "\n";
-	cout << "\033[1;33mWhite moves first.\n";
+	cout << "\033[1;33m" + active_player_str + " to move.\n";
 	cout << "When inputting target square:\n  - Type 'undo' to undo move.\n  - Type 'save' to save PGN file.\n  - Type 'exit' to return to menu.\033[0m\n\n";
 
 	while(true)
@@ -1282,7 +1265,7 @@ vector<string> split(const string& s, const string& delimiter) {
 }
 
 
-void parse_pgn(Chessboard cb, vector<string> pgn_moves)
+Chessboard parse_pgn(Chessboard cb, vector<string> pgn_moves)
 {
 	// Each element in the pgn_moves vector is a ply. Every other element will contain the move number, i.e. 4.e4
 	// To parse, we take off this number if necessary, then use the context of the current board to get the target and destination position.
@@ -1296,9 +1279,7 @@ void parse_pgn(Chessboard cb, vector<string> pgn_moves)
 		cout << "parsing " + cur_pgn;
 
 		// setup the basic move data we want to extract
-		string active_colour = ((i % 2) == 0) ? "white" : "black";
-		string target_square = "";
-		string destination_square = "";
+		Colour active_colour = ((i % 2) == 0) ? Colour::WHITE : Colour::BLACK;
 
 		// determine if the move represents anything notable
 		map<string, bool> move_config = 
@@ -1307,6 +1288,14 @@ void parse_pgn(Chessboard cb, vector<string> pgn_moves)
 			{ "is_check", false },
 			{ "is_checkmate", false },
 			{ "is_castling", false }
+		};
+
+		map<char, Piece> piece_map = {
+			{ 'R', Piece::ROOK   },
+			{ 'N', Piece::KNIGHT },
+			{ 'B', Piece::BISHOP },
+			{ 'Q', Piece::QUEEN  },
+			{ 'K', Piece::KING   }
 		};
 
 		if (cur_pgn.find("x") != string::npos) move_config["is_capture"] = true;
@@ -1319,11 +1308,55 @@ void parse_pgn(Chessboard cb, vector<string> pgn_moves)
 			// remove special characters from the end of the move string
 			cur_pgn = split(split(cur_pgn, "+")[0], "#")[0];
 
+			// the first character should represent the moving piece, so we can extract that
+			Piece moving_piece = Piece::PAWN;
+			if (piece_map.find(cur_pgn[0]) != piece_map.end()) moving_piece = piece_map[cur_pgn[0]];
 
-			cout << '\n';
+			// the last two characters should now represent the destination square, so we can extract that too
+			string dest_square_str = cur_pgn.substr(cur_pgn.length() - 2);
+			vector<int> dest_square = convert_chessboard_square_to_int(dest_square_str);
+
+			// Find the valid move lists for each player
+			cb.valid_moves[Colour::WHITE] = find_all_attackable_squares(cb, Colour::WHITE, 0);
+			cb.valid_moves[Colour::BLACK] = find_all_attackable_squares(cb, Colour::BLACK, 0);
+
+			cb.attacking_moves[Colour::WHITE] = find_all_attackable_squares(cb, Colour::WHITE, 1);
+			cb.attacking_moves[Colour::BLACK] = find_all_attackable_squares(cb, Colour::BLACK, 1);
+
+			vector<Square> potential_movers;
+			// Finding the piece that moved
+			cb.active_player = active_colour;
+			vector<tuple<Square, vector<Square>>> all_movers = (move_config["is_capture"] ? cb.attacking_moves[cb.active_player] : cb.valid_moves[cb.active_player]);
+			for (int i = 0; i < all_movers.size(); i++)
+			{
+				Square potential_mover = get<0>(all_movers[i]);
+				if (is_dest_square_attackable_by_piece(all_movers[i], dest_square))
+				{
+					if (potential_mover.piece == moving_piece)
+					{
+						cout << '\n' + to_string(potential_mover.row) + " " + to_string(potential_mover.col) + "\n";
+						potential_movers.push_back(potential_mover);
+					}
+				}
+			}
+
+			if (potential_movers.size() == 1)
+			{
+				// If only one piece can move to the destination square: we can just take that move.
+				Square mvr = potential_movers[0];
+				switch_pieces(&cb, { mvr.row, mvr.col }, dest_square);
+			}
+			else
+			{
+				// If multiple pieces can move to that square: we must analyse the move PGN more to find the moving piece.
+
+			}
 		}
-		
 	}
+
+	Colour opp_colour = (cb.active_player == Colour::WHITE) ? Colour::BLACK : Colour::WHITE;
+	cb.active_player = opp_colour;
+	return cb;
 }
 
 
@@ -1350,13 +1383,26 @@ void load_game(fs::path gamepath)
 	string movedata = gamedata_elements[8];
 	cb.notation = movedata;
 
+	// look for characters in the PGN that indicate comments.
+	// these are not handled and the PGN will be rejected.
+	for (char c : {'{', '}', ';'})
+	{
+		if (movedata.find(c) != string::npos)
+		{
+			cout << "Found comment character: ";
+			cout << c;
+			cout << " at pos: " + to_string(gamedata.find(c)) + "\n";
+			cout << "Remove comments from PGN before loading.\n    Press ENTER:";
+			getline(cin, movedata);
+			return;
+		}
+	}
+
 	vector<string> pgn_moves = split(movedata, " ");
-	
+	cb = parse_pgn(cb, pgn_moves);
 
-
-		
-
-	cout << "parsed";
+	cout << "parsed\n";
+	loop_board(cb, false);
 }
 
 
@@ -1404,8 +1450,9 @@ void menu_handler()
 				cb = Chessboard();
 				cb.white_name = white_name;
 				cb.black_name = black_name;
+				cb.date = get_formatted_date();
 
-				loop_board(cb);
+				loop_board(cb, true);
 				break;
 			case '2':
 				cout << "Select test board [1/2/3/4/5/6]:\n";
@@ -1416,8 +1463,9 @@ void menu_handler()
 				cb = Chessboard(test_board_map[submenu_choice[0]]);
 				cb.white_name = "test_white";
 				cb.black_name = "test_black";
+				cb.date = get_formatted_date();
 
-				loop_board(cb);
+				loop_board(cb, false);
 				break;
 			case '3':
 				fs::path p = fs::current_path().append("games");

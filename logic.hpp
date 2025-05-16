@@ -60,7 +60,6 @@ namespace LogicEngine
         Square(Piece p, Colour c, int i, int j, bool h_m, std::vector<int> w_m);
     };
 
-
     // Define the board as a 2-d array of squares. 
     // Squares can be empty or occupied by a piece.
     // Also maintains metadata for the game:
@@ -68,6 +67,22 @@ namespace LogicEngine
     class Chessboard
     {
     public:
+        std::map<char, std::tuple<Piece, Colour>> piece_map = {
+            { '_', {Piece::EMPTY,  Colour::EMPTY }},
+            { 'P', {Piece::PAWN,   Colour::WHITE }},
+            { 'R', {Piece::ROOK,   Colour::WHITE }},
+            { 'N', {Piece::KNIGHT, Colour::WHITE }},
+            { 'B', {Piece::BISHOP, Colour::WHITE }},
+            { 'Q', {Piece::QUEEN,  Colour::WHITE }},
+            { 'K', {Piece::KING,   Colour::WHITE }},
+            { 'p', {Piece::PAWN,   Colour::BLACK }},
+            { 'r', {Piece::ROOK,   Colour::BLACK }},
+            { 'n', {Piece::KNIGHT, Colour::BLACK }},
+            { 'b', {Piece::BISHOP, Colour::BLACK }},
+            { 'q', {Piece::QUEEN,  Colour::BLACK }},
+            { 'k', {Piece::KING,   Colour::BLACK }}
+        };
+
         std::vector<std::vector<Square>> board;
         std::map<Colour, std::vector<std::tuple<Square, std::vector<Square>>>> valid_moves;
         std::map<Colour, std::vector<std::tuple<Square, std::vector<Square>>>> attacking_moves;
