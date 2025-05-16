@@ -1430,6 +1430,25 @@ tuple<Chessboard, Gamestate> parse_pgn(Chessboard cb, vector<string> pgn_moves)
 				cb.board[dest_square[0]][dest_square[1]].piece = promotion_choice;
 			}
 		}
+		else
+		{
+			// this is the case when there is castling
+
+			bool queenside = true;
+			if (cur_pgn == "O-O") queenside = false;
+
+			Square player_king = active_colour == Colour::WHITE ? cb.board[0][4] : cb.board[7][4];
+			if (queenside)
+			{
+				switch_pieces(&cb, { player_king.row, player_king.col }, vector<int>({ player_king.row, 2 }));
+				switch_pieces(&cb, { player_king.row, 0 }, vector<int>({ player_king.row, 3 }));
+			}
+			else
+			{
+				switch_pieces(&cb, { player_king.row, player_king.col }, vector<int>({ player_king.row, 6 }));
+				switch_pieces(&cb, { player_king.row, 7 }, vector<int>({ player_king.row, 5 }));
+			}
+		}
 
 		gs = Gamestate::NORMAL;
 		if (move_config["is_check"]) gs = Gamestate::CHECK;
