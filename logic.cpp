@@ -1118,8 +1118,27 @@ string random_string(size_t length)
 }
 
 
+void handle_gamestate(Chessboard cb, Gamestate gs, string winner)
+{
+	switch (gs)
+	{
+		case Gamestate::CHECK:
+			cout << "\033[1;33mThe king is in check\033[0m\n";
+			return;
+		case Gamestate::CHECKMATE:
+			winner = (cb.active_player == Colour::WHITE) ? "White" : "Black";
+			cout << "\033[1;33mThe king is checkmated! Game over. " << winner << " wins!\033[0m\n";
+			print_board(cb, vector<Square>(), gs);
+			return;
+		case Gamestate::STALEMATE:
+			cout << "\033[1;33mIts a stalemate! Game ends in a tie.\033[0m\n";
+			print_board(cb, vector<Square>(), gs);
+			return;
+	}
+}
+
 // Main game loop
-void loop_board(Chessboard cb, bool is_new_game)
+void loop_board(Chessboard cb, Gamestate gs)
 {
 	stack<Chessboard> board_stack;
 	board_stack.push(cb);
@@ -1132,12 +1151,13 @@ void loop_board(Chessboard cb, bool is_new_game)
 	cb.attacking_moves[Colour::BLACK] = find_all_attackable_squares(cb, Colour::BLACK, 1);
 
 	string active_player_str = (cb.active_player == Colour::WHITE) ? "White" : "Black";
-	if (is_new_game) cout << "\033[1;32mNEW GAME\033[0m\n";
+	if (gs == Gamestate::NEWGAME) cout << "\033[1;32mNEW GAME\033[0m\n";
 	else cout << "\033[1;32mLOADED GAME\033[0m\n";
 	cout << "\033[1;33m" + cb.white_name + " vs " + cb.black_name + "\n";
 	cout << "\033[1;33m" + active_player_str + " to move.\n";
 	cout << "When inputting target square:\n  - Type 'undo' to undo move.\n  - Type 'save' to save PGN file.\n  - Type 'exit' to return to menu.\033[0m\n\n";
 
+	handle_gamestate(cb, gs, "???");
 	while(true)
 	{
 		vector<Square> potential_moves = parse_attackable_squares(cb.valid_moves[cb.active_player]);
@@ -1227,21 +1247,8 @@ void loop_board(Chessboard cb, bool is_new_game)
 
 		// Handle the result of making the move
 		string winner;
-		switch (gs)
-		{
-			case Gamestate::CHECK:
-				cout << "\033[1;33mThe king is in check\033[0m\n";
-				break;
-			case Gamestate::CHECKMATE:
-				winner = (cb.active_player == Colour::WHITE) ? "White" : "Black";
-				cout << "\033[1;33mThe king is checkmated! Game over. " << winner << " wins!\033[0m\n";
-				print_board(cb, vector<Square>(), gs);
-				return;
-			case Gamestate::STALEMATE:
-				cout << "\033[1;33mIts a stalemate! Game ends in a tie.\033[0m\n";
-				print_board(cb, vector<Square>(), gs);
-				return;
-		}
+		handle_gamestate(cb, gs, winner);
+		if (gs == Gamestate::CHECKMATE || gs == Gamestate::STALEMATE) return;
 	}
 
 	return;
@@ -1265,12 +1272,38 @@ vector<string> split(const string& s, const string& delimiter) {
 }
 
 
-Chessboard parse_pgn(Chessboard cb, vector<string> pgn_moves)
+vector<Square> loop_potential_pieces_with_context(int piece_val, vector<Square> potential_movers, string search_type)
+{
+	vector<Square> result;
+	for (int i = 0; i < potential_movers.size(); i++)
+	{
+		int potential_index = (search_type == "row" ? potential_movers[i].row : potential_movers[i].col);
+		if (piece_val == potential_index) result.push_back(potential_movers[i]);
+	}
+
+	return result;
+}
+
+
+vector<Square> use_extra_notation_to_find_mover(char pgn_indicator, vector<Square> potential_movers)
+{
+	if (pgn_indicator >= 'a' && pgn_indicator <= 'h')
+	{
+		int piece_col = pgn_indicator - 'a';
+		return loop_potential_pieces_with_context(piece_col, potential_movers, "col");
+	}
+	else
+	{
+		int piece_row = pgn_indicator - '1';
+		return loop_potential_pieces_with_context(piece_row, potential_movers, "row");
+	}
+}
+
+tuple<Chessboard, Gamestate> parse_pgn(Chessboard cb, vector<string> pgn_moves)
 {
 	// Each element in the pgn_moves vector is a ply. Every other element will contain the move number, i.e. 4.e4
 	// To parse, we take off this number if necessary, then use the context of the current board to get the target and destination position.
-	// Then, we use the same makeMove function i.e. 
-	// Gamestate gs = make_move(&cb, vms, target_position, destination_position);
+	Gamestate gs;
 	for (int i = 0; i < pgn_moves.size(); i++)
 	{
 		string cur_pgn = pgn_moves[i];
@@ -1287,8 +1320,10 @@ Chessboard parse_pgn(Chessboard cb, vector<string> pgn_moves)
 			{ "is_capture", false },
 			{ "is_check", false },
 			{ "is_checkmate", false },
-			{ "is_castling", false }
+			{ "is_castling", false },
+			{ "is_promotion", false }
 		};
+		Piece promotion_choice = Piece::EMPTY;
 
 		map<char, Piece> piece_map = {
 			{ 'R', Piece::ROOK   },
@@ -1302,11 +1337,21 @@ Chessboard parse_pgn(Chessboard cb, vector<string> pgn_moves)
 		if (cur_pgn.find("+") != string::npos) move_config["is_check"] = true;
 		if (cur_pgn.find("#") != string::npos) move_config["is_checkmate"] = true;
 		if (cur_pgn.find("O") != string::npos) move_config["is_castling"] = true;
+		for (auto const& piece_map_items : piece_map)
+		{
+			if (cur_pgn.back() == piece_map_items.first)
+			{
+				move_config["is_promotion"] = true;
+				promotion_choice = piece_map_items.second;
+			}
+		}
 
 		if (!move_config["is_castling"])
 		{
 			// remove special characters from the end of the move string
-			cur_pgn = split(split(cur_pgn, "+")[0], "#")[0];
+			cur_pgn = split(split(split(cur_pgn, "+")[0], "#")[0], "ep")[0];
+			if (move_config["is_promotion"]) 
+				cur_pgn = cur_pgn.erase(cur_pgn.length() - 1);
 
 			// the first character should represent the moving piece, so we can extract that
 			Piece moving_piece = Piece::PAWN;
@@ -1340,23 +1385,61 @@ Chessboard parse_pgn(Chessboard cb, vector<string> pgn_moves)
 				}
 			}
 
-			if (potential_movers.size() == 1)
-			{
-				// If only one piece can move to the destination square: we can just take that move.
-				Square mvr = potential_movers[0];
-				switch_pieces(&cb, { mvr.row, mvr.col }, dest_square);
-			}
+			Square mvr;
+			// If only one piece can move to the destination square: we can just take that move.
+			if (potential_movers.size() == 1) mvr = potential_movers[0];
 			else
 			{
 				// If multiple pieces can move to that square: we must analyse the move PGN more to find the moving piece.
+				// So, first append a P to the start of the string in the case of a moving pawn for PGN length consistency.
+				// Then, remove the dest square from the end and the x if a move is a capture, and remove the first character.
+				// Whats left is the extra notation.
+				if (moving_piece == Piece::PAWN) cur_pgn = "P" + cur_pgn;
+				string trimmed_pgn = cur_pgn.substr(1, cur_pgn.size() - 3);
+				trimmed_pgn.erase(remove(trimmed_pgn.begin(), trimmed_pgn.end(), 'x'), trimmed_pgn.end());
 
+				// Now, take the trimmed_pgn and match it to the potential_movers
+				if (trimmed_pgn.size() == 1)
+				{
+					char pgn_indicator = trimmed_pgn[0];
+					mvr = use_extra_notation_to_find_mover(pgn_indicator, potential_movers)[0];
+				}
+				else
+				{
+					// two lists detailing all the potential dest squares for row and col,
+					// so find the square on both lists and take that piece.
+					vector<vector<Square>> mvrs = {
+						use_extra_notation_to_find_mover(trimmed_pgn[0], potential_movers),
+						use_extra_notation_to_find_mover(trimmed_pgn[1], potential_movers) };
+
+					for (vector<Square>::iterator i = mvrs[0].begin(); i != mvrs[0].end(); ++i)
+					{
+						if (find(mvrs[1].begin(), mvrs[1].end(), *i) != mvrs[1].end())
+						{
+							mvr = *i;
+						}
+					}
+				}
+			}
+
+			switch_pieces(&cb, { mvr.row, mvr.col }, dest_square);
+			cb.move_no++;
+
+			if (move_config["is_promotion"])
+			{
+				cb.board[dest_square[0]][dest_square[1]].piece = promotion_choice;
 			}
 		}
+
+		gs = Gamestate::NORMAL;
+		if (move_config["is_check"]) gs = Gamestate::CHECK;
+		if (move_config["is_checkmate"]) gs = Gamestate::CHECKMATE;
 	}
 
 	Colour opp_colour = (cb.active_player == Colour::WHITE) ? Colour::BLACK : Colour::WHITE;
 	cb.active_player = opp_colour;
-	return cb;
+
+	return tuple<Chessboard, Gamestate>(cb, gs);
 }
 
 
@@ -1399,10 +1482,12 @@ void load_game(fs::path gamepath)
 	}
 
 	vector<string> pgn_moves = split(movedata, " ");
-	cb = parse_pgn(cb, pgn_moves);
+
+	tuple<Chessboard, Gamestate> game_state;
+	game_state = parse_pgn(cb, pgn_moves);
 
 	cout << "parsed\n";
-	loop_board(cb, false);
+	loop_board(get<0>(game_state), get<1>(game_state));
 }
 
 
@@ -1452,7 +1537,7 @@ void menu_handler()
 				cb.black_name = black_name;
 				cb.date = get_formatted_date();
 
-				loop_board(cb, true);
+				loop_board(cb, Gamestate::NEWGAME);
 				break;
 			case '2':
 				cout << "Select test board [1/2/3/4/5/6]:\n";
@@ -1465,7 +1550,7 @@ void menu_handler()
 				cb.black_name = "test_black";
 				cb.date = get_formatted_date();
 
-				loop_board(cb, false);
+				loop_board(cb, Gamestate::NORMAL);
 				break;
 			case '3':
 				fs::path p = fs::current_path().append("games");

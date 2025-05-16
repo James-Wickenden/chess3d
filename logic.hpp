@@ -39,7 +39,8 @@ namespace LogicEngine
         NORMAL,
         CHECK,
         CHECKMATE,
-        STALEMATE
+        STALEMATE,
+        NEWGAME
     };
 
     // Define a square. A square can be empty or occupied by a piece
