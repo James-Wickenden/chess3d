@@ -1,6 +1,7 @@
 // logic.cpp
 
 #include "logic.hpp"
+#include "pgnp/includes/pgnp.hpp"
 
 using namespace std;
 using namespace LogicEngine;
@@ -1281,6 +1282,51 @@ vector<string> split(const string& s, const string& delimiter) {
 }
 
 
+void parse_pgn(Chessboard cb, vector<string> pgn_moves)
+{
+	// Each element in the pgn_moves vector is a ply. Every other element will contain the move number, i.e. 4.e4
+	// To parse, we take off this number if necessary, then use the context of the current board to get the target and destination position.
+	// Then, we use the same makeMove function i.e. 
+	// Gamestate gs = make_move(&cb, vms, target_position, destination_position);
+	for (int i = 0; i < pgn_moves.size(); i++)
+	{
+		string cur_pgn = pgn_moves[i];
+		if (cur_pgn == "") continue;
+		cur_pgn = split(cur_pgn, ".").back();
+		cout << "parsing " + cur_pgn;
+
+		// setup the basic move data we want to extract
+		string active_colour = ((i % 2) == 0) ? "white" : "black";
+		string target_square = "";
+		string destination_square = "";
+
+		// determine if the move represents anything notable
+		map<string, bool> move_config = 
+		{
+			{ "is_capture", false },
+			{ "is_check", false },
+			{ "is_checkmate", false },
+			{ "is_castling", false }
+		};
+
+		if (cur_pgn.find("x") != string::npos) move_config["is_capture"] = true;
+		if (cur_pgn.find("+") != string::npos) move_config["is_check"] = true;
+		if (cur_pgn.find("#") != string::npos) move_config["is_checkmate"] = true;
+		if (cur_pgn.find("O") != string::npos) move_config["is_castling"] = true;
+
+		if (!move_config["is_castling"])
+		{
+			// remove special characters from the end of the move string
+			cur_pgn = split(split(cur_pgn, "+")[0], "#")[0];
+
+
+			cout << '\n';
+		}
+		
+	}
+}
+
+
 // Parse a game file and load it, then read through all the PGN moves to arrive at the current gamestate.
 void load_game(fs::path gamepath)
 {
@@ -1305,6 +1351,12 @@ void load_game(fs::path gamepath)
 	cb.notation = movedata;
 
 	vector<string> pgn_moves = split(movedata, " ");
+	
+
+
+		
+
+	cout << "parsed";
 }
 
 
