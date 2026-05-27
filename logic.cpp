@@ -7,6 +7,14 @@ using namespace LogicEngine;
 namespace fs = std::filesystem;
 
 const int DIM_SIZE = 8; // size of the chessboard
+bool show_debug = true;
+
+void debug_print(vector<string> output)
+{
+	if (!show_debug) return;
+
+	cout << output[0];
+}
 
 // Define constructors for squares based off different input sets.
 Square::Square()
@@ -773,7 +781,7 @@ Piece get_pawn_promotion_terminal()
 
 	while (true)
 	{
-		cout << "Choose piece to promote to [Queen/Rook/Bishop/Knight]: ";
+		debug_print({ "Choose piece to promote to [Queen/Rook/Bishop/Knight]: " });
 		getline(cin, promotion_choice);
 		std::transform(promotion_choice.begin(), promotion_choice.end(), promotion_choice.begin(), ::toupper);
 		if (piece_string_map.count(promotion_choice) > 0) return piece_string_map.at(promotion_choice);
@@ -936,12 +944,12 @@ void print_board(Chessboard chessboard, vector<Square> valid_moves, Gamestate ga
 		{ Piece::QUEEN,  'Q' },
 		{ Piece::KING,   'K' }
 	};
-	cout << chessboard.notation << '\n';
+	debug_print({ chessboard.notation, "\n" });
+	debug_print({ "Current board : \n\n" });
 
-	cout << "Current board : \n\n";
 	for (int i = 0; i < DIM_SIZE; i++)
 	{
-		cout << (char)('0' + (DIM_SIZE - i)) << ' ';
+		debug_print({ to_string(('0' + (DIM_SIZE - i))), " "});
 		for (int j = 0; j < DIM_SIZE; j++)
 		{
 			/*
@@ -993,13 +1001,13 @@ void print_board(Chessboard chessboard, vector<Square> valid_moves, Gamestate ga
 					break;
 			}
 
-			cout << colourcode << piece_map[chessboard.board[DIM_SIZE - (1 + i)][j].piece] << "\033[0m";
+			debug_print({ colourcode, to_string(piece_map[chessboard.board[DIM_SIZE - (1 + i)][j].piece]), "\033[0m" });
 		}
-		cout << '\n';
+		debug_print({ "\n" });
 	}
-	cout << "\n  abcdefgh\n\n";
-	if (gamestate == Gamestate::NORMAL || gamestate == Gamestate::CHECK)
-		cout << "\033[1;32m" << (chessboard.active_player == Colour::WHITE ? "WHITE" : "BLACK") << " TO MOVE\033[0m\n\n";
+	debug_print({ "\n  abcdefgh\n\n" });
+	if (gamestate == Gamestate::NORMAL || gamestate == Gamestate::CHECK)]
+		debug_print({ "\033[1;32m", (chessboard.active_player == Colour::WHITE ? "WHITE" : "BLACK"), " TO MOVE\033[0m\n\n" });
 	return;
 }
 
@@ -1123,15 +1131,15 @@ void handle_gamestate(Chessboard cb, Gamestate gs, string winner)
 	switch (gs)
 	{
 		case Gamestate::CHECK:
-			cout << "\033[1;33mThe king is in check\033[0m\n";
+			debug_print({"\033[1;33mThe king is in check\033[0m\n"});
 			return;
 		case Gamestate::CHECKMATE:
 			winner = (cb.active_player == Colour::WHITE) ? "White" : "Black";
-			cout << "\033[1;33mThe king is checkmated! Game over. " << winner << " wins!\033[0m\n";
+			debug_print({"\033[1;33mThe king is checkmated! Game over. ", winner, " wins!\033[0m\n"});
 			print_board(cb, vector<Square>(), gs);
 			return;
 		case Gamestate::STALEMATE:
-			cout << "\033[1;33mIts a stalemate! Game ends in a tie.\033[0m\n";
+			debug_print({"\033[1;33mIts a stalemate! Game ends in a tie.\033[0m\n"});
 			print_board(cb, vector<Square>(), gs);
 			return;
 	}
