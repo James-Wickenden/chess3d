@@ -4,21 +4,10 @@
 
 using namespace std;
 using namespace LogicEngine;
+using namespace ConsoleEngine;
 namespace fs = std::filesystem;
 
 const int DIM_SIZE = 8; // size of the chessboard
-bool show_debug = true;
-
-void debug_print(vector<string> output)
-{
-	if (!show_debug) return;
-
-	for (int i = 0; i < output.size(); i++)
-	{
-		cout << output[i];
-	}
-	
-}
 
 // Define constructors for squares based off different input sets.
 Square::Square()

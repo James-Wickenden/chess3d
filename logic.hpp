@@ -14,6 +14,8 @@
 #include <filesystem>
 #include <ctime>
 
+#include "console.hpp"
+
 namespace LogicEngine 
 {
     enum class Colour 
