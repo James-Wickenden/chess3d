@@ -13,7 +13,11 @@ void debug_print(vector<string> output)
 {
 	if (!show_debug) return;
 
-	cout << output[0];
+	for (int i = 0; i < output.size(); i++)
+	{
+		cout << output[i];
+	}
+	
 }
 
 // Define constructors for squares based off different input sets.
@@ -949,7 +953,8 @@ void print_board(Chessboard chessboard, vector<Square> valid_moves, Gamestate ga
 
 	for (int i = 0; i < DIM_SIZE; i++)
 	{
-		debug_print({ to_string(('0' + (DIM_SIZE - i))), " "});
+		std::string rank(1, '0' + (DIM_SIZE - i));
+		debug_print({ rank, " "});
 		for (int j = 0; j < DIM_SIZE; j++)
 		{
 			/*
@@ -1001,12 +1006,13 @@ void print_board(Chessboard chessboard, vector<Square> valid_moves, Gamestate ga
 					break;
 			}
 
-			debug_print({ colourcode, to_string(piece_map[chessboard.board[DIM_SIZE - (1 + i)][j].piece]), "\033[0m" });
+			string print_string = colourcode + piece_map[chessboard.board[DIM_SIZE - (1 + i)][j].piece] + " \033[0m";
+			debug_print({ print_string });
 		}
 		debug_print({ "\n" });
 	}
-	debug_print({ "\n  abcdefgh\n\n" });
-	if (gamestate == Gamestate::NORMAL || gamestate == Gamestate::CHECK)]
+	debug_print({ "\n  a b c d e f g h\n\n" });
+	if (gamestate == Gamestate::NORMAL || gamestate == Gamestate::CHECK)
 		debug_print({ "\033[1;32m", (chessboard.active_player == Colour::WHITE ? "WHITE" : "BLACK"), " TO MOVE\033[0m\n\n" });
 	return;
 }
@@ -1016,7 +1022,7 @@ void print_board(Chessboard chessboard, vector<Square> valid_moves, Gamestate ga
 string read_board_setup_file(string filename)
 {
 	// todo: replace this with local pathing
-	string path_to_file = "C:/Users/James/source/repos/chess3d/";
+	string path_to_file = "C:\\Users\\snowi\\source\\repos\\chess3d\\";
 	std::ifstream file(path_to_file + filename);
 	std::string line;
 	std::string file_contents;
