@@ -101,4 +101,7 @@ namespace LogicEngine
 
     std::vector<std::tuple<Square, std::vector<Square>>> 
         find_all_attackable_squares(Chessboard chessboard, Colour colour, int mode);
+
+    void loop_board(Chessboard cb, Gamestate gs);
+    void load_game(std::filesystem::path gamepath);
 }
