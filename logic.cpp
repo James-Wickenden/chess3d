@@ -1154,22 +1154,23 @@ void loop_board(Chessboard cb, Gamestate gs)
 	cb.attacking_moves[Colour::BLACK] = find_all_attackable_squares(cb, Colour::BLACK, 1);
 
 	string active_player_str = (cb.active_player == Colour::WHITE) ? "White" : "Black";
-	if (gs == Gamestate::NEWGAME) cout << "\033[1;32mNEW GAME\033[0m\n";
-	else cout << "\033[1;32mLOADED GAME\033[0m\n";
-	cout << "\033[1;33m" + cb.white_name + " vs " + cb.black_name + "\n";
-	cout << "\033[1;33m" + active_player_str + " to move.\n";
-	cout << "When inputting target square:\n  - Type 'undo' to undo move.\n  - Type 'save' to save PGN file.\n  - Type 'exit' to return to menu.\033[0m\n\n";
+	if (gs == Gamestate::NEWGAME) debug_print({ "\033[1;32mNEW GAME\033[0m\n" });
+	else debug_print({ "\033[1;32mLOADED GAME\033[0m\n" });
+	debug_print({ "\033[1;33m" + cb.white_name + " vs " + cb.black_name + "\n" });
+	debug_print({ "\033[1;33m" + active_player_str + " to move.\n" });
+	debug_print({ "When inputting target square:\n  - Type 'undo' to undo move.\n  - Type 'save' to save PGN file.\n  - Type 'exit' to return to menu.\033[0m\n\n" });
 
 	handle_gamestate(cb, gs, "???");
 	while(true)
 	{
 		vector<Square> potential_moves = parse_attackable_squares(cb.valid_moves[cb.active_player]);
-		cout << "Number of valid moves: " << potential_moves.size() << "\nValid moves are: ";
+		string num_potential_moves = to_string(potential_moves.size());
+		debug_print({ "Number of valid moves: " , num_potential_moves , "\nValid moves are: " });
 		for (int i = 0; i < potential_moves.size(); i++)
 		{
-			cout << convert_int_to_chessboard_square(potential_moves[i].col, potential_moves[i].row) << ' ';
+			debug_print({ convert_int_to_chessboard_square(potential_moves[i].col, potential_moves[i].row) , " " });
 		}
-		cout << '\n';
+			debug_print({ "\n" });
 
 		print_board(cb, vector<Square>(), Gamestate::NORMAL);
 
@@ -1178,7 +1179,7 @@ void loop_board(Chessboard cb, Gamestate gs)
 		while (!move_selected)
 		{
 			// first select the piece to move and get a list of the squares the piece can move to
-			cout << "Input target square or choice: ";
+			debug_print({ "Input target square or choice: " });
 			getline(cin, move_choice);
 
 			if (move_choice == "") continue;
@@ -1187,11 +1188,11 @@ void loop_board(Chessboard cb, Gamestate gs)
 				// Handle the 'undo' operation.
 				if (board_stack.size() <= 1)
 				{
-					cout << "\033[1;31mNo more moves to undo.\033[0m\n";
+					debug_print({ "\033[1;31mNo more moves to undo.\033[0m\n" });
 					continue;
 				}
 					
-				cout << "\033[1;31mUndoing move.\033[0m\n";
+					debug_print({ "\033[1;31mUndoing move.\033[0m\n" });
 				board_stack.pop();
 				cb = board_stack.top();
 				print_board(cb, vector<Square>(), Gamestate::NORMAL);
@@ -1200,7 +1201,7 @@ void loop_board(Chessboard cb, Gamestate gs)
 			}
 			else if (move_choice == "save")
 			{
-				cout << "\033[1;31mSaving game.\033[0m\n";
+					debug_print({ "\033[1;31mSaving game.\033[0m\n" });
 				save_game(cb);
 			}
 			else if (move_choice == "exit")
@@ -1217,26 +1218,26 @@ void loop_board(Chessboard cb, Gamestate gs)
 		vector<int> target_position = convert_chessboard_square_to_int(target_square);
 		if (cb.board[target_position[0]][target_position[1]].colour != cb.active_player)
 		{
-			cout << "\x1B[2J\x1B[H";
-			cout << "\033[1;31mInvalid piece selected\033[0m\n";
+			debug_print({ "\x1B[2J\x1B[H" });
+			debug_print({ "\033[1;31mInvalid piece selected\033[0m\n" });
 			continue;
 		}
 
 		// find and print the list of moves from that square's piece
-		cout << "\x1B[2J\x1B[H";
-		cout << "Moves: ";
+			debug_print({ "\x1B[2J\x1B[H" });
+			debug_print({ "Moves: " });
 
 		vector<Square> vms = cb.find_valid_moves(cb.board[target_position[0]][target_position[1]]);
 		for (int i = 0; i < vms.size(); i++)
 		{
-			cout << convert_int_to_chessboard_square(vms[i].col, vms[i].row) << ' ';
+			debug_print({ convert_int_to_chessboard_square(vms[i].col, vms[i].row), " " });
 		}
-		cout << '\n';
+			debug_print({ "\n" });
 
 		print_board(cb, vms, Gamestate::NORMAL);
 
 		// then get the square to move to, and if on the list, we can make the move
-		cout << "\nChoose destination square: ";
+		debug_print({ "\nChoose destination square: " });
 		getline(cin, destination_square);
 		if (destination_square == "") continue;
 
@@ -1312,7 +1313,7 @@ tuple<Chessboard, Gamestate> parse_pgn(Chessboard cb, vector<string> pgn_moves)
 		string cur_pgn = pgn_moves[i];
 		if (cur_pgn == "") continue;
 		cur_pgn = split(cur_pgn, ".").back();
-		cout << "parsing " + cur_pgn;
+		debug_print({ "parsing " + cur_pgn });
 
 		// setup the basic move data we want to extract
 		Colour active_colour = ((i % 2) == 0) ? Colour::WHITE : Colour::BLACK;
@@ -1382,7 +1383,7 @@ tuple<Chessboard, Gamestate> parse_pgn(Chessboard cb, vector<string> pgn_moves)
 				{
 					if (potential_mover.piece == moving_piece)
 					{
-						cout << '\n' + to_string(potential_mover.row) + " " + to_string(potential_mover.col) + "\n";
+						debug_print({ '\n' + to_string(potential_mover.row) + " " + to_string(potential_mover.col) + "\n" });
 						potential_movers.push_back(potential_mover);
 					}
 				}
@@ -1494,10 +1495,11 @@ void load_game(fs::path gamepath)
 	{
 		if (movedata.find(c) != string::npos)
 		{
-			cout << "Found comment character: ";
-			cout << c;
-			cout << " at pos: " + to_string(gamedata.find(c)) + "\n";
-			cout << "Remove comments from PGN before loading.\n    Press ENTER:";
+			string comment_char(1, c);
+			debug_print({ "Found comment character: " });
+			debug_print({ comment_char });
+			debug_print({ " at pos: " + to_string(gamedata.find(c)) + "\n" });
+			debug_print({ "Remove comments from PGN before loading.\n    Press ENTER:" });
 			getline(cin, movedata);
 			return;
 		}
@@ -1508,7 +1510,7 @@ void load_game(fs::path gamepath)
 	tuple<Chessboard, Gamestate> game_state;
 	game_state = parse_pgn(cb, pgn_moves);
 
-	cout << "parsed\n";
+	debug_print({ "parsed\n" });
 	loop_board(get<0>(game_state), get<1>(game_state));
 }
 
@@ -1519,11 +1521,11 @@ void menu_handler()
 	bool valid_menu_choice = false;
 	while (!valid_menu_choice)
 	{
-		cout << "\x1B[2J\x1B[H";
-		cout << "\033[1;33mchess3d by Mammoth [https://github.com/James-Wickenden/chess3d]\033[0m\n";
-		cout << "Options [1/2/3]:\n";
-		cout << "    1. New game\n    2. Test position\n    3. Load game\n\n";
-		cout << "\033[1;32mEnter choice: \033[0m";
+		debug_print({ "\x1B[2J\x1B[H" });
+		debug_print({ "\033[1;33mchess3d by Mammoth [https://github.com/James-Wickenden/chess3d]\033[0m\n" });
+		debug_print({ "Options [1/2/3]:\n" });
+		debug_print({ "    1. New game\n    2. Test position\n    3. Load game\n\n" });
+		debug_print({ "\033[1;32mEnter choice: \033[0m" });
 
 		string menu_choice;
 		getline(cin, menu_choice);
@@ -1546,13 +1548,13 @@ void menu_handler()
 			case '1':
 				white_name = random_string(8);
 				black_name = random_string(8);
-				cout << "White player name [" + white_name + "]: ";
+				debug_print({ "White player name [" + white_name + "]: " });
 				getline(cin, tmp_name);
 				if (tmp_name != "") white_name = tmp_name;
-				cout << "Black player name [" + black_name + "]: ";
+				debug_print({ "Black player name [" + black_name + "]: " });
 				getline(cin, tmp_name);
 				if (tmp_name != "") black_name = tmp_name;
-				cout << "\x1B[2J\x1B[H";
+				debug_print({ "\x1B[2J\x1B[H" });
 
 				cb = Chessboard();
 				cb.white_name = white_name;
@@ -1562,10 +1564,10 @@ void menu_handler()
 				loop_board(cb, Gamestate::NEWGAME);
 				break;
 			case '2':
-				cout << "Select test board [1/2/3/4/5/6]:\n";
-				cout << "  1. position\n  2. en passant\n  3. notation\n  4. castling\n  5. promotion\n  6. stalemate\n";
+				debug_print({ "Select test board [1/2/3/4/5/6]:\n" });
+				debug_print({ "  1. position\n  2. en passant\n  3. notation\n  4. castling\n  5. promotion\n  6. stalemate\n" });
 				getline(cin, submenu_choice);
-				cout << "\x1B[2J\x1B[H";
+				debug_print({ "\x1B[2J\x1B[H" });
 
 				cb = Chessboard(test_board_map[submenu_choice[0]]);
 				cb.white_name = "test_white";
@@ -1582,12 +1584,12 @@ void menu_handler()
 				{
 					string gamepath = entry.path().string();
 					string base_filename = gamepath.substr(gamepath.find_last_of("/\\") + 1);
-					cout << cur_id << ".  " << base_filename + '\n';
+					debug_print({ cur_id, ".  ", base_filename + '\n' });
 					id_game_map[to_string(cur_id)] = base_filename;
 					cur_id++;
 				}
 
-				cout << "\nSelect game with id: ";
+					debug_print({ "\nSelect game with id: " });
 				getline(cin, submenu_choice);
 				string chosen_file = id_game_map[submenu_choice];
 				if (fs::exists(p.append(chosen_file)))
