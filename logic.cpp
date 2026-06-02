@@ -925,6 +925,18 @@ vector<Square> Chessboard::find_valid_moves(Square target)
 }
 
 
+// For a given square, determine if the input is in the form of a valid chessboard square, e.g. "a1", "h8", etc.
+bool is_square_input_valid(string input)
+{
+	if (input.length() != 2) return false;
+	char file = input[0];
+	char rank = input[1];
+	if (file < 'a' || file > 'h') return false;
+	if (rank < '1' || rank > '8') return false;
+	return true;
+}
+
+
 // Print a coloured board to the console.
 void print_board(Chessboard chessboard, vector<Square> valid_moves, Gamestate gamestate)
 {
@@ -1140,6 +1152,7 @@ void handle_gamestate(Chessboard cb, Gamestate gs, string winner)
 	}
 }
 
+
 // Main game loop
 void loop_board(Chessboard cb, Gamestate gs)
 {
@@ -1192,7 +1205,7 @@ void loop_board(Chessboard cb, Gamestate gs)
 					continue;
 				}
 					
-					debug_print({ "\033[1;31mUndoing move.\033[0m\n" });
+				debug_print({ "\033[1;31mUndoing move.\033[0m\n" });
 				board_stack.pop();
 				cb = board_stack.top();
 				print_board(cb, vector<Square>(), Gamestate::NORMAL);
@@ -1201,15 +1214,23 @@ void loop_board(Chessboard cb, Gamestate gs)
 			}
 			else if (move_choice == "save")
 			{
-					debug_print({ "\033[1;31mSaving game.\033[0m\n" });
+				// Handle the 'save' operation.
+				debug_print({ "\033[1;31mSaving game.\033[0m\n" });
 				save_game(cb);
 			}
 			else if (move_choice == "exit")
 			{
+				// Simple exit the game loop to return to the menu
 				return;
 			}
 			else
 			{
+				// Validate and handle the inputted move
+				if (!is_square_input_valid(move_choice))
+				{
+					debug_print({ "\033[1;31mInvalid input. Should be of form [a-h][1-8]\033[0m\n" });
+					continue;
+				}
 				target_square = move_choice;
 				move_selected = true;
 			}
@@ -1219,30 +1240,59 @@ void loop_board(Chessboard cb, Gamestate gs)
 		if (cb.board[target_position[0]][target_position[1]].colour != cb.active_player)
 		{
 			debug_print({ "\x1B[2J\x1B[H" });
-			debug_print({ "\033[1;31mInvalid piece selected\033[0m\n" });
+			debug_print({ "\033[1;31mPiece selected belongs to opposite player\033[0m\n" });
 			continue;
 		}
 
 		// find and print the list of moves from that square's piece
-			debug_print({ "\x1B[2J\x1B[H" });
-			debug_print({ "Moves: " });
+		debug_print({ "\x1B[2J\x1B[H" });
+		debug_print({ "Moves: " });
 
 		vector<Square> vms = cb.find_valid_moves(cb.board[target_position[0]][target_position[1]]);
+		// if the chosen piece has no valid moves, restart the loop
+		if (vms.size() == 0)
+		{
+			debug_print({ "\x1B[2J\x1B[H" });
+			debug_print({ "\033[1;31mNo valid moves for that piece\033[0m\n" });
+			continue;
+		}
+
 		for (int i = 0; i < vms.size(); i++)
 		{
 			debug_print({ convert_int_to_chessboard_square(vms[i].col, vms[i].row), " " });
 		}
-			debug_print({ "\n" });
+		debug_print({ "\n" });
 
 		print_board(cb, vms, Gamestate::NORMAL);
 
 		// then get the square to move to, and if on the list, we can make the move
 		debug_print({ "\nChoose destination square: " });
 		getline(cin, destination_square);
+
 		if (destination_square == "") continue;
+		if (!is_square_input_valid(destination_square))
+		{
+			debug_print({ "\033[1;31mInvalid input. Should be of form [a-h][1-8]\033[0m\n" });
+			continue;
+		}
 
 		vector<int> destination_position = convert_chessboard_square_to_int(destination_square);
 
+		// make sure we can move to that square with the piece we selected. if not, restart the loop.
+		bool found_valid_move_match = false;
+		for (int i = 0; i < vms.size(); i++)
+		{
+			if (vms[i].row == destination_position[0] && vms[i].col == destination_position[1])
+			{
+				found_valid_move_match = true;
+			}
+		}
+		if (!found_valid_move_match)
+		{
+			debug_print({ "\033[1;31mInvalid move for that piece\033[0m\n" });
+			continue;
+		}
+			
 		// finally: make the move
 		Gamestate gs = make_move(&cb, vms, target_position, destination_position);
 
@@ -1303,11 +1353,14 @@ vector<Square> use_extra_notation_to_find_mover(char pgn_indicator, vector<Squar
 	}
 }
 
+
 tuple<Chessboard, Gamestate> parse_pgn(Chessboard cb, vector<string> pgn_moves)
 {
 	// Each element in the pgn_moves vector is a ply. Every other element will contain the move number, i.e. 4.e4
 	// To parse, we take off this number if necessary, then use the context of the current board to get the target and destination position.
 	Gamestate gs;
+	if (pgn_moves[0] == "") return make_tuple(cb, Gamestate::NEWGAME);
+
 	for (int i = 0; i < pgn_moves.size(); i++)
 	{
 		string cur_pgn = pgn_moves[i];
@@ -1584,7 +1637,7 @@ void menu_handler()
 				{
 					string gamepath = entry.path().string();
 					string base_filename = gamepath.substr(gamepath.find_last_of("/\\") + 1);
-					debug_print({ cur_id, ".  ", base_filename + '\n' });
+					debug_print({ to_string(cur_id), ".  ", base_filename + "\n" });
 					id_game_map[to_string(cur_id)] = base_filename;
 					cur_id++;
 				}
