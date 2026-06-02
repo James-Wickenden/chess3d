@@ -1,7 +1,6 @@
 // logic.cpp
 
 #include "console.hpp"
-#include "logic.hpp"
 
 using namespace ConsoleEngine;
 using namespace LogicEngine;
@@ -23,6 +22,88 @@ void ConsoleEngine::debug_print(vector<string> output)
 	{
 		cout << output[i];
 	}
+}
+
+
+// Print a coloured board to the console.
+void ConsoleEngine::print_board(Chessboard chessboard, vector<Square> valid_moves, Gamestate gamestate)
+{
+	map<Piece, char> piece_map = {
+		{ Piece::EMPTY,  ' ' },
+		{ Piece::PAWN,   'P' },
+		{ Piece::ROOK,   'R' },
+		{ Piece::KNIGHT, 'N' },
+		{ Piece::BISHOP, 'B' },
+		{ Piece::QUEEN,  'Q' },
+		{ Piece::KING,   'K' }
+	};
+	debug_print({ chessboard.notation, "\n" });
+	debug_print({ "Current board : \n\n" });
+
+	for (int i = 0; i < DIM_SIZE; i++)
+	{
+		string rank(1, '0' + (DIM_SIZE - i));
+		debug_print({ rank, " " });
+		for (int j = 0; j < DIM_SIZE; j++)
+		{
+			/*
+			there are different cases for colouring the board: black tile, white tile, black piece, white piece, valid move, invalid move
+			first, we colour the square, then draw the piece, then reset the colour
+
+						foreground background
+				black        30         40
+				red          31         41
+				green        32         42
+				yellow       33         43
+				blue         34         44
+				magenta      35         45
+				cyan         36         46
+				white        37         47
+			*/
+
+			string colourcode = "\033[";
+
+			// attacked squares
+			if (count(valid_moves.begin(), valid_moves.end(), chessboard.board[DIM_SIZE - (1 + i)][j]) > 0)
+			{
+				colourcode += "43;"; // yellow bg
+			}
+			else
+			{
+				// colour tile black for black square, white for white square
+				switch ((i ^ j) & 1)
+				{
+				case 0:
+					colourcode += "40;"; // black bg
+					break;
+				case 1:
+					colourcode += "47;"; // white bg
+					break;
+				}
+			}
+
+			switch (chessboard.board[DIM_SIZE - (1 + i)][j].colour)
+			{
+			case Colour::WHITE:
+				colourcode += "1;31m"; // red, bold fg
+				break;
+			case Colour::BLACK:
+				colourcode += "1;35m"; // purple, bold fg
+				break;
+			case Colour::EMPTY:
+				colourcode += "1m";
+				break;
+			}
+
+			string print_string = colourcode + piece_map[chessboard.board[DIM_SIZE - (1 + i)][j].piece] + " \033[0m";
+			debug_print({ print_string });
+		}
+		debug_print({ "\n" });
+	}
+	debug_print({ "\n  a b c d e f g h\n\n" });
+	if (gamestate == Gamestate::NORMAL || gamestate == Gamestate::CHECK)
+		debug_print({ "\033[1;32m", (chessboard.active_player == Colour::WHITE ? "WHITE" : "BLACK"), " TO MOVE\033[0m\n\n" });
+	return;
 }
 
 

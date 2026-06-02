@@ -14,8 +14,6 @@
 #include <filesystem>
 #include <ctime>
 
-#include "console.hpp"
-
 namespace LogicEngine 
 {
     enum class Colour 
@@ -99,9 +97,13 @@ namespace LogicEngine
         Chessboard() : Chessboard("starting_position.txt") {};
     };
 
+
+    const int DIM_SIZE = 8; // size of the chessboard
+	// Functions for finding moves, making moves, and handling the game state.
     std::vector<std::tuple<Square, std::vector<Square>>> 
         find_all_attackable_squares(Chessboard chessboard, Colour colour, int mode);
 
     void loop_board(Chessboard cb, Gamestate gs);
     void load_game(std::filesystem::path gamepath);
+
 }
