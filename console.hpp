@@ -6,6 +6,7 @@
 #include <filesystem>
 
 #include "logic.hpp"
+#include "file_handler.hpp"
 
 namespace ConsoleEngine
 {

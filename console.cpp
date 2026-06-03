@@ -2,9 +2,10 @@
 
 #include "console.hpp"
 
-using namespace ConsoleEngine;
-using namespace LogicEngine;
 using namespace std;
+using namespace LogicEngine;
+using namespace ConsoleEngine;
+using namespace FileHandler;
 namespace fs = std::filesystem;
 
 static string random_string(size_t length);
@@ -184,7 +185,7 @@ void ConsoleEngine::menu_handler()
 			debug_print({ "\nSelect game with id: " });
 			getline(cin, submenu_choice);
 			string chosen_file = id_game_map[submenu_choice];
-			if (fs::exists(p.append(chosen_file)))
+			if (exists(p.append(chosen_file)))
 				load_game(p);
 			break;
 		}

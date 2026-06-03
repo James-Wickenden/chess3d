@@ -1,6 +1,5 @@
- // logic.hpp
-
 #pragma once
+
 #pragma warning( disable : 26451 )
 
 #include <vector>
@@ -104,6 +103,7 @@ namespace LogicEngine
         find_all_attackable_squares(Chessboard chessboard, Colour colour, int mode);
 
     void loop_board(Chessboard cb, Gamestate gs);
-    void load_game(std::filesystem::path gamepath);
-
+    void switch_pieces(Chessboard* cb, std::vector<int> target_position, std::vector<int> destination_position);
+	bool is_dest_square_attackable_by_piece(std::tuple<Square, std::vector<Square>> potential_mover, std::vector<int> dest_position);
+    std::vector<int> convert_chessboard_square_to_int(std::string position);
 }
