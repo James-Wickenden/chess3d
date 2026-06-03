@@ -8,46 +8,6 @@ using namespace ConsoleEngine;
 using namespace FileHandler;
 namespace fs = std::filesystem;
 
-/*
-
-namespace LogicEngine
-{
-
-	class Square
-	{
-		public:
-		Colour colour;
-		Piece piece;
-		int row;
-		int col;
-		bool has_moved;
-		vector<int> when_moved; // List of move numbers when that piece was moved
-		bool operator==(const Square rhs) const;
-		bool operator!=(const Square rhs) const;
-		Square();
-		Square(int row, int col);
-		Square(Piece p, Colour c, int i, int j, bool h_m, vector<int> w_m);
-	};
-}
-
-class LogicEngine
-{
-	public:
-		bool is_dest_square_attackable_by_piece(tuple<Square, vector<Square>> potential_mover, vector<int> dest_position);
-		tuple<Chessboard, Gamestate> make_move(Chessboard* cb, vector<int> target_position, vector<int> destination_position);
-		vector<Square> find_all_attackable_squares(Chessboard cb, Colour colour, int mode);
-		bool test_for_checkmate_stalemate(Chessboard cb, Colour colour_to_move, Colour opp_colour);
-		string get_ply_notation(Chessboard* cb, vector<int> target_position, vector<int> destination_position, bool is_capture);
-		void switch_pieces(Chessboard* cb, vector<int> target_position, vector<int> destination_position);
-};;
-
-class ConsoleEngine
-{
-	public:
-		void debug_print(vector<string> output);
-
-};
-*/
 vector<string> split(const string& s, const string& delimiter);
 vector<Square> loop_potential_pieces_with_context(int piece_val, vector<Square> potential_movers, string search_type);
 vector<Square> use_extra_notation_to_find_mover(char pgn_indicator, vector<Square> potential_movers);
@@ -123,7 +83,7 @@ tuple<Chessboard, Gamestate> FileHandler::parse_pgn(Chessboard cb, vector<string
 		string cur_pgn = pgn_moves[i];
 		if (cur_pgn == "") continue;
 		cur_pgn = split(cur_pgn, ".").back();
-		ConsoleEngine::debug_print({ "parsing " + cur_pgn });
+		ConsoleEngine::debug_print(Level::DEBUG, { "parsing " + cur_pgn });
 
 		// setup the basic move data we want to extract
 		Colour active_colour = ((i % 2) == 0) ? Colour::WHITE : Colour::BLACK;
@@ -193,7 +153,7 @@ tuple<Chessboard, Gamestate> FileHandler::parse_pgn(Chessboard cb, vector<string
 				{
 					if (potential_mover.piece == moving_piece)
 					{
-						ConsoleEngine::debug_print({ '\n' + to_string(potential_mover.row) + " " + to_string(potential_mover.col) + "\n" });
+						ConsoleEngine::debug_print(Level::DEBUG, { '\n' + to_string(potential_mover.row) + " " + to_string(potential_mover.col) + "\n" });
 						potential_movers.push_back(potential_mover);
 					}
 				}
@@ -306,10 +266,10 @@ void FileHandler::load_game(fs::path gamepath)
 		if (movedata.find(c) != string::npos)
 		{
 			string comment_char(1, c);
-			debug_print({ "Found comment character: " });
-			debug_print({ comment_char });
-			debug_print({ " at pos: " + to_string(gamedata.find(c)) + "\n" });
-			debug_print({ "Remove comments from PGN before loading.\n    Press ENTER:" });
+			debug_print(Level::ERROR, { "Found comment character: " });
+			debug_print(Level::ERROR, { comment_char });
+			debug_print(Level::ERROR, { " at pos: " + to_string(gamedata.find(c)) + "\n" });
+			debug_print(Level::ERROR, { "Remove comments from PGN before loading.\n    Press ENTER:" });
 			getline(cin, movedata);
 			return;
 		}
@@ -320,7 +280,7 @@ void FileHandler::load_game(fs::path gamepath)
 	tuple<Chessboard, Gamestate> game_state;
 	game_state = parse_pgn(cb, pgn_moves);
 
-	debug_print({ "parsed\n" });
+	debug_print(Level::DEBUG, { "parsed\n" });
 	loop_board(get<0>(game_state), get<1>(game_state));
 }
 

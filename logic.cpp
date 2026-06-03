@@ -681,12 +681,12 @@ string get_piece_notation_map(Piece p)
 {
 	map<Piece, string> piece_notation_map = {
 		{ Piece::EMPTY,  " " },
-		{ Piece::PAWN,   "" },
-		{ Piece::ROOK,   "R"},
-		{ Piece::KNIGHT, "N"},
-		{ Piece::BISHOP, "B"},
-		{ Piece::QUEEN,  "Q"},
-		{ Piece::KING,   "K"}
+		{ Piece::PAWN,   ""  },
+		{ Piece::ROOK,   "R" },
+		{ Piece::KNIGHT, "N" },
+		{ Piece::BISHOP, "B" },
+		{ Piece::QUEEN,  "Q" },
+		{ Piece::KING,   "K" }
 	};
 
 	return piece_notation_map[p];
@@ -775,7 +775,7 @@ Piece get_pawn_promotion_terminal()
 
 	while (true)
 	{
-		debug_print({ "Choose piece to promote to [Queen/Rook/Bishop/Knight]: " });
+		debug_print(Level::INFO, { "Choose piece to promote to [Queen/Rook/Bishop/Knight]: " });
 		getline(cin, promotion_choice);
 		std::transform(promotion_choice.begin(), promotion_choice.end(), promotion_choice.begin(), ::toupper);
 		if (piece_string_map.count(promotion_choice) > 0) return piece_string_map.at(promotion_choice);
@@ -969,15 +969,15 @@ void handle_gamestate(Chessboard cb, Gamestate gs, string winner)
 	switch (gs)
 	{
 		case Gamestate::CHECK:
-			debug_print({"\033[1;33mThe king is in check\033[0m\n"});
+			debug_print(Level::INFO, {"\033[1;33mThe king is in check\033[0m\n"});
 			return;
 		case Gamestate::CHECKMATE:
 			winner = (cb.active_player == Colour::WHITE) ? "White" : "Black";
-			debug_print({"\033[1;33mThe king is checkmated! Game over. ", winner, " wins!\033[0m\n"});
+			debug_print(Level::INFO, {"\033[1;33mThe king is checkmated! Game over. ", winner, " wins!\033[0m\n"});
 			print_board(cb, vector<Square>(), gs);
 			return;
 		case Gamestate::STALEMATE:
-			debug_print({"\033[1;33mIts a stalemate! Game ends in a tie.\033[0m\n"});
+			debug_print(Level::INFO, {"\033[1;33mIts a stalemate! Game ends in a tie.\033[0m\n"});
 			print_board(cb, vector<Square>(), gs);
 			return;
 	}
@@ -998,23 +998,23 @@ void LogicEngine::loop_board(Chessboard cb, Gamestate gs)
 	cb.attacking_moves[Colour::BLACK] = find_all_attackable_squares(cb, Colour::BLACK, 1);
 
 	string active_player_str = (cb.active_player == Colour::WHITE) ? "White" : "Black";
-	if (gs == Gamestate::NEWGAME) debug_print({ "\033[1;32mNEW GAME\033[0m\n" });
-	else debug_print({ "\033[1;32mLOADED GAME\033[0m\n" });
-	debug_print({ "\033[1;33m" + cb.white_name + " vs " + cb.black_name + "\n" });
-	debug_print({ "\033[1;33m" + active_player_str + " to move.\n" });
-	debug_print({ "When inputting target square:\n  - Type 'undo' to undo move.\n  - Type 'save' to save PGN file.\n  - Type 'exit' to return to menu.\033[0m\n\n" });
+	if (gs == Gamestate::NEWGAME) debug_print(Level::INFO, { "\033[1;32mNEW GAME\033[0m\n" });
+	else debug_print(Level::INFO, { "\033[1;32mLOADED GAME\033[0m\n" });
+	debug_print(Level::INFO, { "\033[1;33m" + cb.white_name + " vs " + cb.black_name + "\n" });
+	debug_print(Level::INFO, { "\033[1;33m" + active_player_str + " to move.\n" });
+	debug_print(Level::INFO, { "When inputting target square:\n  - Type 'undo' to undo move.\n  - Type 'save' to save PGN file.\n  - Type 'exit' to return to menu.\033[0m\n\n" });
 
 	handle_gamestate(cb, gs, "???");
 	while(true)
 	{
 		vector<Square> potential_moves = parse_attackable_squares(cb.valid_moves[cb.active_player]);
 		string num_potential_moves = to_string(potential_moves.size());
-		debug_print({ "Number of valid moves: " , num_potential_moves , "\nValid moves are: " });
+		debug_print(Level::DEBUG, { "Number of valid moves: " , num_potential_moves , "\nValid moves are: " });
 		for (int i = 0; i < potential_moves.size(); i++)
 		{
-			debug_print({ convert_int_to_chessboard_square(potential_moves[i].col, potential_moves[i].row) , " " });
+			debug_print(Level::DEBUG, { convert_int_to_chessboard_square(potential_moves[i].col, potential_moves[i].row) , " " });
 		}
-			debug_print({ "\n" });
+			debug_print(Level::INFO, { "\n" });
 
 		print_board(cb, vector<Square>(), Gamestate::NORMAL);
 
@@ -1023,7 +1023,7 @@ void LogicEngine::loop_board(Chessboard cb, Gamestate gs)
 		while (!move_selected)
 		{
 			// first select the piece to move and get a list of the squares the piece can move to
-			debug_print({ "Input target square or choice: " });
+			debug_print(Level::INFO, { "Input target square or choice: " });
 			getline(cin, move_choice);
 
 			if (move_choice == "") continue;
@@ -1032,11 +1032,11 @@ void LogicEngine::loop_board(Chessboard cb, Gamestate gs)
 				// Handle the 'undo' operation.
 				if (board_stack.size() <= 1)
 				{
-					debug_print({ "\033[1;31mNo more moves to undo.\033[0m\n" });
+					debug_print(Level::ERROR, { "\033[1;31mNo more moves to undo.\033[0m\n" });
 					continue;
 				}
 					
-				debug_print({ "\033[1;31mUndoing move.\033[0m\n" });
+				debug_print(Level::INFO, { "\033[1;31mUndoing move.\033[0m\n" });
 				board_stack.pop();
 				cb = board_stack.top();
 				print_board(cb, vector<Square>(), Gamestate::NORMAL);
@@ -1046,7 +1046,7 @@ void LogicEngine::loop_board(Chessboard cb, Gamestate gs)
 			else if (move_choice == "save")
 			{
 				// Handle the 'save' operation.
-				debug_print({ "\033[1;31mSaving game.\033[0m\n" });
+				debug_print(Level::INFO, { "\033[1;31mSaving game.\033[0m\n" });
 				save_game(cb);
 			}
 			else if (move_choice == "exit")
@@ -1059,7 +1059,7 @@ void LogicEngine::loop_board(Chessboard cb, Gamestate gs)
 				// Validate and handle the inputted move
 				if (!is_square_input_valid(move_choice))
 				{
-					debug_print({ "\033[1;31mInvalid input. Should be of form [a-h][1-8]\033[0m\n" });
+					debug_print(Level::ERROR, { "\033[1;31mInvalid input. Should be of form [a-h][1-8]\033[0m\n" });
 					continue;
 				}
 				target_square = move_choice;
@@ -1070,40 +1070,40 @@ void LogicEngine::loop_board(Chessboard cb, Gamestate gs)
 		vector<int> target_position = convert_chessboard_square_to_int(target_square);
 		if (cb.board[target_position[0]][target_position[1]].colour != cb.active_player)
 		{
-			debug_print({ "\x1B[2J\x1B[H" });
-			debug_print({ "\033[1;31mPiece selected belongs to opposite player\033[0m\n" });
+			debug_print(Level::INFO, { "\x1B[2J\x1B[H" });
+			debug_print(Level::INFO, { "\033[1;31mPiece selected belongs to opposite player\033[0m\n" });
 			continue;
 		}
 
 		// find and print the list of moves from that square's piece
-		debug_print({ "\x1B[2J\x1B[H" });
-		debug_print({ "Moves: " });
+		debug_print(Level::DEBUG, { "\x1B[2J\x1B[H" });
+		debug_print(Level::DEBUG, { "Moves: " });
 
 		vector<Square> vms = cb.find_valid_moves(cb.board[target_position[0]][target_position[1]]);
 		// if the chosen piece has no valid moves, restart the loop
 		if (vms.size() == 0)
 		{
-			debug_print({ "\x1B[2J\x1B[H" });
-			debug_print({ "\033[1;31mNo valid moves for that piece\033[0m\n" });
+			debug_print(Level::ERROR, { "\x1B[2J\x1B[H" });
+			debug_print(Level::ERROR, { "\033[1;31mNo valid moves for that piece\033[0m\n" });
 			continue;
 		}
 
 		for (int i = 0; i < vms.size(); i++)
 		{
-			debug_print({ convert_int_to_chessboard_square(vms[i].col, vms[i].row), " " });
+			debug_print(Level::DEBUG, { convert_int_to_chessboard_square(vms[i].col, vms[i].row), " " });
 		}
-		debug_print({ "\n" });
+		debug_print(Level::DEBUG, { "\n" });
 
 		print_board(cb, vms, Gamestate::NORMAL);
 
 		// then get the square to move to, and if on the list, we can make the move
-		debug_print({ "\nChoose destination square: " });
+		debug_print(Level::INFO, { "\nChoose destination square: " });
 		getline(cin, destination_square);
 
 		if (destination_square == "") continue;
 		if (!is_square_input_valid(destination_square))
 		{
-			debug_print({ "\033[1;31mInvalid input. Should be of form [a-h][1-8]\033[0m\n" });
+			debug_print(Level::ERROR, { "\033[1;31mInvalid input. Should be of form [a-h][1-8]\033[0m\n" });
 			continue;
 		}
 
@@ -1120,7 +1120,7 @@ void LogicEngine::loop_board(Chessboard cb, Gamestate gs)
 		}
 		if (!found_valid_move_match)
 		{
-			debug_print({ "\033[1;31mInvalid move for that piece\033[0m\n" });
+			debug_print(Level::ERROR, { "\033[1;31mInvalid move for that piece\033[0m\n" });
 			continue;
 		}
 			
