@@ -776,6 +776,8 @@ Gamestate make_move(Chessboard* cb, vector<Square> valid_piece_moves, vector<int
 	Square destination_piece = cb->board[destination_position[0]][destination_position[1]];
 	string ply_notation = "";
 
+	Gamestate gamestate = Gamestate::NORMAL;
+
 	// 1. Make the move
 	for (int i = 0; i < valid_piece_moves.size(); i++)
 	{
@@ -850,15 +852,16 @@ Gamestate make_move(Chessboard* cb, vector<Square> valid_piece_moves, vector<int
 			// We already restrict the player's moves once in check to those that escape check.
 			// We must however look for checkmate.
 			is_check = true;
+			gamestate = Gamestate::CHECK;
 			bool is_checkmate = test_for_checkmate_stalemate(cb, opp_colour, colour);
-			if (is_checkmate) return Gamestate::CHECKMATE;
 			ply_notation += (is_checkmate ? "#" : "+");
+			if (is_checkmate) gamestate = Gamestate::CHECKMATE;
 		}
 	}
 	if (!is_check)
 	{
 		bool is_stalemate = test_for_checkmate_stalemate(cb, opp_colour, colour);
-		if (is_stalemate) return Gamestate::STALEMATE;
+		if (is_stalemate) gamestate = Gamestate::STALEMATE;
 	}
 
 	// 3. Add the ply notation to the game's notation
@@ -884,8 +887,7 @@ Gamestate make_move(Chessboard* cb, vector<Square> valid_piece_moves, vector<int
 	cb->move_no++;
 
 	
-	if (is_check) return Gamestate::CHECK;
-	return Gamestate::NORMAL;
+	return gamestate;
 }
 
 
@@ -929,7 +931,7 @@ Chessboard::Chessboard(string filename)
 
 
 // Switch based off Check, Checkmate and Stalemate gamestates to print the appropriate message and board state.
-void handle_gamestate(Chessboard cb, Gamestate gs, string winner)
+void handle_gamestate(Chessboard *cb, Gamestate gs, string *winner)
 {
 	switch (gs)
 	{
@@ -937,13 +939,15 @@ void handle_gamestate(Chessboard cb, Gamestate gs, string winner)
 			debug_print(Level::INFO, {"\033[1;33mThe king is in check\033[0m\n"});
 			return;
 		case Gamestate::CHECKMATE:
-			winner = (cb.active_player == Colour::WHITE) ? "White" : "Black";
-			debug_print(Level::INFO, {"\033[1;33mThe king is checkmated! Game over. ", winner, " wins!\033[0m\n"});
-			print_board(cb, vector<Square>(), gs);
+			*winner = (cb->active_player == Colour::WHITE) ? "White" : "Black";
+			cb->result = (cb->active_player == Colour::WHITE) ? "1-0" : "0-1";
+			debug_print(Level::INFO, {"\033[1;33mThe king is checkmated! Game over. ", *winner, " wins!\033[0m\n"});
+			print_board(*cb, vector<Square>(), gs);
 			return;
 		case Gamestate::STALEMATE:
+			cb->result = "1/2-1/2";
 			debug_print(Level::INFO, {"\033[1;33mIts a stalemate! Game ends in a tie.\033[0m\n"});
-			print_board(cb, vector<Square>(), gs);
+			print_board(*cb, vector<Square>(), gs);
 			return;
 	}
 }
@@ -953,7 +957,6 @@ void handle_gamestate(Chessboard cb, Gamestate gs, string winner)
 void LogicEngine::loop_board(Chessboard cb, Gamestate gs)
 {
 	stack<Chessboard> board_stack;
-	board_stack.push(cb);
 
 	// Find the valid move lists for each player
 	cb.valid_moves[Colour::WHITE] = find_all_attackable_squares(cb, Colour::WHITE, Piece_Finding_Mode::VALID);
@@ -963,7 +966,7 @@ void LogicEngine::loop_board(Chessboard cb, Gamestate gs)
 	cb.attacking_moves[Colour::BLACK] = find_all_attackable_squares(cb, Colour::BLACK, Piece_Finding_Mode::ATTACKABLE);
 
 	print_game_load_header((cb.active_player == Colour::WHITE) ? "White" : "Black", gs, cb.white_name, cb.black_name);
-	handle_gamestate(cb, gs, "???");
+	handle_gamestate(&cb, gs, &(string)"???");
 
 	while(true)
 	{
@@ -1008,8 +1011,16 @@ void LogicEngine::loop_board(Chessboard cb, Gamestate gs)
 
 		// Handle the result of making the move
 		string winner;
-		handle_gamestate(cb, gs, winner);
-		if (gs == Gamestate::CHECKMATE || gs == Gamestate::STALEMATE) return;
+		handle_gamestate(&cb, gs, &winner);
+		if (gs == Gamestate::CHECKMATE || gs == Gamestate::STALEMATE)
+		{
+			// If the game is over, we need to write the PGN file for the game
+			// We should not return to the menu until the user has had a chance to see the final board state, so wait for input
+			save_game(cb);
+			cin.get();
+			debug_print(Level::INFO, { "Press any key to return to menu.\n" });
+			return;
+		}
 	}
 
 	return;

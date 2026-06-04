@@ -56,7 +56,7 @@ bool FileHandler::save_game(Chessboard cb)
 
 	// Then, we dump the PGN as stored in the chessboard object, ending with the game result.
 	game_string_data += cb.notation;
-	game_string_data += cb.result + '\n';
+	game_string_data += ' ' + cb.result + '\n';
 
 	ofstream gamefile;
 	fs::path filename = fs::current_path().append("games").append(
