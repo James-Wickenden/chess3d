@@ -1026,10 +1026,3 @@ void LogicEngine::loop_board(Chessboard cb, Gamestate gs)
 
 	return;
 }
-
-
-int main()
-{
-	srand(time(NULL));
-	menu_handler();
-}
