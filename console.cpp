@@ -11,6 +11,7 @@ namespace fs = std::filesystem;
 static string random_string(size_t length);
 static string get_formatted_date();
 bool is_square_input_valid(string input);
+int get_int_input(string request_phrase, int min_allowed, int max_allowed);
 
 // Controls the level of debug output.
 // Levels are DEBUG, INFO, ERROR, NONE.
@@ -249,27 +250,24 @@ void ConsoleEngine::menu_handler()
 		debug_print(Level::INFO, { "\033[1;33mchess3d by Mammoth [https://github.com/James-Wickenden/chess3d]\033[0m\n" });
 		debug_print(Level::INFO, { "Options [1/2/3]:\n" });
 		debug_print(Level::INFO, { "    1. New game\n    2. Test position\n    3. Load game\n\n" });
-		debug_print(Level::INFO, { "\033[1;32mEnter choice: \033[0m" });
 
-		string menu_choice;
-		getline(cin, menu_choice);
-		if (menu_choice.size() == 0) continue;
+		int menu_choice = get_int_input("\033[1;32mEnter choice: \033[0m", 1, 3);
 
 		Chessboard cb;
-		string white_name, black_name, tmp_name, submenu_choice;
+		string white_name, black_name, tmp_name;
 
-		map<char, string> test_board_map = {
-					{ '1', "test_positions/test_position.txt" },
-					{ '2', "test_positions/test_ep.txt" },
-					{ '3', "test_positions/test_notation.txt" },
-					{ '4', "test_positions/test_castling.txt" },
-					{ '5', "test_positions/test_promotion.txt" },
-					{ '6', "test_positions/test_stalemate.txt" }
+		map<int, string> test_board_map = {
+					{ 1, "test_positions/test_position.txt" },
+					{ 2, "test_positions/test_ep.txt" },
+					{ 3, "test_positions/test_notation.txt" },
+					{ 4, "test_positions/test_castling.txt" },
+					{ 5, "test_positions/test_promotion.txt" },
+					{ 6, "test_positions/test_stalemate.txt" }
 		};
 
-		switch (menu_choice[0])
+		switch (menu_choice)
 		{
-		case '1':
+		case 1:
 			white_name = random_string(8);
 			black_name = random_string(8);
 			debug_print(Level::INFO, { "White player name [" + white_name + "]: " });
@@ -287,35 +285,33 @@ void ConsoleEngine::menu_handler()
 
 			loop_board(cb, Gamestate::NEWGAME);
 			break;
-		case '2':
+		case 2:
 			debug_print(Level::INFO, { "Select test board [1/2/3/4/5/6]:\n" });
-			debug_print(Level::INFO, { "  1. position\n  2. en passant\n  3. notation\n  4. castling\n  5. promotion\n  6. stalemate\n" });
-			getline(cin, submenu_choice);
+			menu_choice = get_int_input("  1. position\n  2. en passant\n  3. notation\n  4. castling\n  5. promotion\n  6. stalemate\n" , 1, 6);
 			debug_print(Level::INFO, { "\x1B[2J\x1B[H" });
 
-			cb = Chessboard(test_board_map[submenu_choice[0]]);
+			cb = Chessboard(test_board_map[menu_choice]);
 			cb.white_name = "test_white";
 			cb.black_name = "test_black";
 			cb.date = get_formatted_date();
 
 			loop_board(cb, Gamestate::NORMAL);
 			break;
-		case '3':
+		case 3:
 			fs::path p = fs::current_path().append("games");
-			map<string, string> id_game_map;
+			map<int, string> id_game_map;
 			int cur_id = 1;
 			for (const auto& entry : fs::directory_iterator(p))
 			{
 				string gamepath = entry.path().string();
 				string base_filename = gamepath.substr(gamepath.find_last_of("/\\") + 1);
 				debug_print(Level::INFO, { to_string(cur_id), ".  ", base_filename + "\n" });
-				id_game_map[to_string(cur_id)] = base_filename;
+				id_game_map[cur_id] = base_filename;
 				cur_id++;
 			}
 
-			debug_print(Level::INFO, { "\nSelect game with id: " });
-			getline(cin, submenu_choice);
-			string chosen_file = id_game_map[submenu_choice];
+			menu_choice = get_int_input("\nSelect game with id: ", 1, cur_id - 1);
+			string chosen_file = id_game_map[menu_choice];
 			if (exists(p.append(chosen_file)))
 				load_game(p);
 			break;
@@ -356,6 +352,37 @@ Piece ConsoleEngine::get_pawn_promotion_terminal()
 	}
 
 	return Piece::EMPTY;
+}
+
+
+// Get an integer input from the user, and validate that it is an integer within the specified bounds. 
+// If not, keep requesting input until a valid input is given, and then return that input.
+int get_int_input(string request_phrase, int min_allowed, int max_allowed)
+{
+	debug_print(Level::INFO, { request_phrase });
+	string input;
+	while (true)
+	{
+		getline(cin, input);
+		try
+		{
+			int int_input = stoi(input);
+			if (int_input >= min_allowed && int_input <= max_allowed) 
+				return int_input;
+			else
+			{
+				debug_print(Level::ERROR, { "\033[1;31mInvalid input. Should be an integer between " + to_string(min_allowed) + " and " + to_string(max_allowed) + ".\033[0m\n" });
+				debug_print(Level::INFO, { request_phrase });
+				continue;
+			}
+		}
+		catch (exception& e)
+		{
+			debug_print(Level::ERROR, { "\033[1;31mInvalid input. Should be an integer between " + to_string(min_allowed) + " and " + to_string(max_allowed) + ".\033[0m\n" });
+			debug_print(Level::INFO, { request_phrase });
+			continue;
+		}
+	}
 }
 
 
