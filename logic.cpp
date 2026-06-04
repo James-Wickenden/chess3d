@@ -957,6 +957,7 @@ void handle_gamestate(Chessboard *cb, Gamestate gs, string *winner)
 void LogicEngine::loop_board(Chessboard cb, Gamestate gs)
 {
 	stack<Chessboard> board_stack;
+	board_stack.push(cb);
 
 	// Find the valid move lists for each player
 	cb.valid_moves[Colour::WHITE] = find_all_attackable_squares(cb, Colour::WHITE, Piece_Finding_Mode::VALID);
