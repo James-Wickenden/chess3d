@@ -42,6 +42,12 @@ namespace LogicEngine
         NEWGAME
     };
 
+    enum class Piece_Finding_Mode
+    {
+        VALID,
+        ATTACKABLE
+    };
+
     // Define a square. A square can be empty or occupied by a piece
     class Square
     {
@@ -100,7 +106,7 @@ namespace LogicEngine
     const int DIM_SIZE = 8; // size of the chessboard
 	// Functions for finding moves, making moves, and handling the game state.
     std::vector<std::tuple<Square, std::vector<Square>>> 
-        find_all_attackable_squares(Chessboard chessboard, Colour colour, int mode);
+        find_all_attackable_squares(Chessboard chessboard, Colour colour, Piece_Finding_Mode mode);
 
     void loop_board(Chessboard cb, Gamestate gs);
     void switch_pieces(Chessboard* cb, std::vector<int> target_position, std::vector<int> destination_position);

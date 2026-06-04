@@ -13,7 +13,7 @@ static string get_formatted_date();
 
 // Controls the level of debug output.
 // Levels are DEBUG, INFO, ERROR, NONE.
-Level current_log_level = Level::INFO;
+Level current_log_level = Level::DEBUG;
 
 
 // Compare the log level of the message to be printed to the current log level, and if so then print it to the console.

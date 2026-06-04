@@ -10,6 +10,7 @@ using namespace ConsoleEngine;
 using namespace FileHandler;
 namespace fs = std::filesystem;
 
+
 // Define constructors for squares based off different input sets.
 Square::Square()
 {
@@ -590,7 +591,7 @@ vector<Square> get_valid_square_moves(Square target, Chessboard chessboard, Colo
 
 
 // Go through the board and compile a list of all the squares a player is currently targeting
-vector<tuple<Square, vector<Square>>> LogicEngine::find_all_attackable_squares(Chessboard chessboard, Colour colour, int mode)
+vector<tuple<Square, vector<Square>>> LogicEngine::find_all_attackable_squares(Chessboard chessboard, Colour colour, Piece_Finding_Mode mode)
 {
 	vector<tuple<Square, vector<Square>>> all_attackable_squares;
 	Colour opp_colour = (colour == Colour::WHITE) ? Colour::BLACK : Colour::WHITE;
@@ -606,13 +607,13 @@ vector<tuple<Square, vector<Square>>> LogicEngine::find_all_attackable_squares(C
 				switch (mode)
 				{
 					// find all the valid moves
-					case 0:
+					case Piece_Finding_Mode::VALID:
 						confirmed_piece_moves = { board[row][col], get_valid_square_moves(board[row][col], chessboard, opp_colour) };
 						all_attackable_squares.push_back(confirmed_piece_moves);
 						break;
 
 					// find all the attacking moves. this only excludes pawns moving forward, which are not squares attacked by the pawn
-					case 1:
+					case Piece_Finding_Mode::ATTACKABLE:
 						int dir = (board[row][col].colour == Colour::WHITE) ? 1 : -1;
 						switch (board[row][col].piece)
 						{
@@ -855,11 +856,11 @@ Gamestate make_move(Chessboard* cb, vector<Square> valid_piece_moves, vector<int
 	// Both 'lists' are actually stored as a map with colour keys and a vector of tuples for values,
 	//	where the tuples contain the coloured piece and a vector of the squares that piece can move to or attack.
 	// i.e.: std::map<Colour, std::vector<std::tuple<Square, std::vector<Square>>>>
-	(*cb).valid_moves[Colour::WHITE] = find_all_attackable_squares(*cb, Colour::WHITE, 0);
-	(*cb).valid_moves[Colour::BLACK] = find_all_attackable_squares(*cb, Colour::BLACK, 0);
+	(*cb).valid_moves[Colour::WHITE] = find_all_attackable_squares(*cb, Colour::WHITE, Piece_Finding_Mode::VALID);
+	(*cb).valid_moves[Colour::BLACK] = find_all_attackable_squares(*cb, Colour::BLACK, Piece_Finding_Mode::VALID);
 
-	(*cb).attacking_moves[Colour::WHITE] = find_all_attackable_squares(*cb, Colour::WHITE, 1);
-	(*cb).attacking_moves[Colour::BLACK] = find_all_attackable_squares(*cb, Colour::BLACK, 1);
+	(*cb).attacking_moves[Colour::WHITE] = find_all_attackable_squares(*cb, Colour::WHITE, Piece_Finding_Mode::ATTACKABLE);
+	(*cb).attacking_moves[Colour::BLACK] = find_all_attackable_squares(*cb, Colour::BLACK, Piece_Finding_Mode::ATTACKABLE);
 
 	// 2. Look for check, checkmate and stalemate
 	vector<Square> attackable_squares = parse_attackable_squares((*cb).attacking_moves[colour]);
@@ -991,11 +992,11 @@ void LogicEngine::loop_board(Chessboard cb, Gamestate gs)
 	board_stack.push(cb);
 
 	// Find the valid move lists for each player
-	cb.valid_moves[Colour::WHITE] = find_all_attackable_squares(cb, Colour::WHITE, 0);
-	cb.valid_moves[Colour::BLACK] = find_all_attackable_squares(cb, Colour::BLACK, 0);
+	cb.valid_moves[Colour::WHITE] = find_all_attackable_squares(cb, Colour::WHITE, Piece_Finding_Mode::VALID);
+	cb.valid_moves[Colour::BLACK] = find_all_attackable_squares(cb, Colour::BLACK, Piece_Finding_Mode::VALID);
 
-	cb.attacking_moves[Colour::WHITE] = find_all_attackable_squares(cb, Colour::WHITE, 1);
-	cb.attacking_moves[Colour::BLACK] = find_all_attackable_squares(cb, Colour::BLACK, 1);
+	cb.attacking_moves[Colour::WHITE] = find_all_attackable_squares(cb, Colour::WHITE, Piece_Finding_Mode::ATTACKABLE);
+	cb.attacking_moves[Colour::BLACK] = find_all_attackable_squares(cb, Colour::BLACK, Piece_Finding_Mode::ATTACKABLE);
 
 	string active_player_str = (cb.active_player == Colour::WHITE) ? "White" : "Black";
 	if (gs == Gamestate::NEWGAME) debug_print(Level::INFO, { "\033[1;32mNEW GAME\033[0m\n" });

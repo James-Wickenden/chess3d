@@ -136,11 +136,11 @@ tuple<Chessboard, Gamestate> FileHandler::parse_pgn(Chessboard cb, vector<string
 			vector<int> dest_square = convert_chessboard_square_to_int(dest_square_str);
 
 			// Find the valid move lists for each player
-			cb.valid_moves[Colour::WHITE] = find_all_attackable_squares(cb, Colour::WHITE, 0);
-			cb.valid_moves[Colour::BLACK] = find_all_attackable_squares(cb, Colour::BLACK, 0);
+			cb.valid_moves[Colour::WHITE] = find_all_attackable_squares(cb, Colour::WHITE, Piece_Finding_Mode::VALID);
+			cb.valid_moves[Colour::BLACK] = find_all_attackable_squares(cb, Colour::BLACK, Piece_Finding_Mode::VALID);
 
-			cb.attacking_moves[Colour::WHITE] = find_all_attackable_squares(cb, Colour::WHITE, 1);
-			cb.attacking_moves[Colour::BLACK] = find_all_attackable_squares(cb, Colour::BLACK, 1);
+			cb.attacking_moves[Colour::WHITE] = find_all_attackable_squares(cb, Colour::WHITE, Piece_Finding_Mode::ATTACKABLE);
+			cb.attacking_moves[Colour::BLACK] = find_all_attackable_squares(cb, Colour::BLACK, Piece_Finding_Mode::ATTACKABLE);
 
 			vector<Square> potential_movers;
 			// Finding the piece that moved
