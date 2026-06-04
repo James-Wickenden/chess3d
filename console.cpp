@@ -324,6 +324,7 @@ void ConsoleEngine::menu_handler()
 }
 
 
+// Print the header for a new or loaded game, including the player names, active player and instructions for inputting moves.
 void ConsoleEngine::print_game_load_header(string active_player_str, Gamestate gs, string white_name, string black_name)
 {
 	if (gs == Gamestate::NEWGAME) debug_print(Level::INFO, { "\033[1;32mNEW GAME\033[0m\n" });
@@ -331,8 +332,32 @@ void ConsoleEngine::print_game_load_header(string active_player_str, Gamestate g
 	debug_print(Level::INFO, { "\033[1;33m" + white_name + " vs " + black_name + "\n" });
 	debug_print(Level::INFO, { "\033[1;33m" + active_player_str + " to move.\n" });
 	debug_print(Level::INFO, { "When inputting target square:\n  - Type 'undo' to undo move.\n  - Type 'save' to save PGN file.\n  - Type 'exit' to return to menu.\033[0m\n\n" });
-
 }
+
+
+// Promote a pawn within the terminal by calling for input, and halting until a valid input is made. Then return the selection.
+Piece ConsoleEngine::get_pawn_promotion_terminal()
+{
+	string promotion_choice;
+	map<string, Piece> piece_string_map =
+	{
+		{ "QUEEN",  Piece::QUEEN },
+		{ "ROOK",   Piece::ROOK },
+		{ "BISHOP", Piece::BISHOP },
+		{ "KNIGHT", Piece::KNIGHT }
+	};
+
+	while (true)
+	{
+		debug_print(Level::INFO, { "Choose piece to promote to [Queen/Rook/Bishop/Knight]: " });
+		getline(cin, promotion_choice);
+		std::transform(promotion_choice.begin(), promotion_choice.end(), promotion_choice.begin(), ::toupper);
+		if (piece_string_map.count(promotion_choice) > 0) return piece_string_map.at(promotion_choice);
+	}
+
+	return Piece::EMPTY;
+}
+
 
 // Return an alphanumeric string of random characters length n.
 static string random_string(size_t length)

@@ -25,4 +25,5 @@ namespace ConsoleEngine
 	void menu_handler();
 	void print_board(LogicEngine::Chessboard chessboard, std::vector<LogicEngine::Square> valid_moves, LogicEngine::Gamestate gamestate);
     void print_game_load_header(std::string active_player_str, LogicEngine::Gamestate gs, std::string white_name, std::string black_name);
+    LogicEngine::Piece get_pawn_promotion_terminal();
 }

@@ -763,30 +763,6 @@ string get_ply_notation(Chessboard* cb, vector<int> target_position, vector<int>
 }
 
 
-// Promote a pawn within the terminal by calling for input, and halting until a valid input is made. Then return the selection.
-Piece get_pawn_promotion_terminal()
-{
-	string promotion_choice;
-	map<string, Piece> piece_string_map =
-	{
-		{ "QUEEN",  Piece::QUEEN },
-		{ "ROOK",   Piece::ROOK },
-		{ "BISHOP", Piece::BISHOP },
-		{ "KNIGHT", Piece::KNIGHT }
-	};
-
-	while (true)
-	{
-		debug_print(Level::INFO, { "Choose piece to promote to [Queen/Rook/Bishop/Knight]: " });
-		getline(cin, promotion_choice);
-		std::transform(promotion_choice.begin(), promotion_choice.end(), promotion_choice.begin(), ::toupper);
-		if (piece_string_map.count(promotion_choice) > 0) return piece_string_map.at(promotion_choice);
-	}
-
-	return Piece::EMPTY;
-}
-
-
 // Go through the move making procedure. Assume from prior checks that the move is valid.
 // 1. Make the move, storing the details of the moved piece and destination square
 // 2. Look for check, checkmate and stalemate.
