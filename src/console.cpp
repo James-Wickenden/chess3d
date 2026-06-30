@@ -257,12 +257,12 @@ void ConsoleEngine::menu_handler()
 		string white_name, black_name, tmp_name;
 
 		map<int, string> test_board_map = {
-					{ 1, "test_positions/test_position.txt" },
-					{ 2, "test_positions/test_ep.txt" },
-					{ 3, "test_positions/test_notation.txt" },
-					{ 4, "test_positions/test_castling.txt" },
-					{ 5, "test_positions/test_promotion.txt" },
-					{ 6, "test_positions/test_stalemate.txt" }
+					{ 1, "positions/test_position.txt" },
+					{ 2, "positions/test_ep.txt" },
+					{ 3, "positions/test_notation.txt" },
+					{ 4, "positions/test_castling.txt" },
+					{ 5, "positions/test_promotion.txt" },
+					{ 6, "positions/test_stalemate.txt" }
 		};
 
 		switch (menu_choice)

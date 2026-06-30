@@ -99,7 +99,7 @@ namespace LogicEngine
         std::vector<Square> find_valid_moves(Square target);
 
         Chessboard(std::string start_position);
-        Chessboard() : Chessboard("starting_position.txt") {};
+        Chessboard() : Chessboard("positions/starting_position.txt") {};
     };
 
 

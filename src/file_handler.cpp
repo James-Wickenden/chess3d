@@ -96,7 +96,6 @@ tuple<Chessboard, Gamestate> FileHandler::parse_pgn(Chessboard cb, vector<string
 			{ "is_checkmate",  false },
 			{ "is_castling",   false },
 			{ "is_promotion",  false },
-			{ "is_en_passant", false },
 			{ "is_result",     false }
 		};
 		Piece promotion_choice = Piece::EMPTY;
@@ -114,7 +113,6 @@ tuple<Chessboard, Gamestate> FileHandler::parse_pgn(Chessboard cb, vector<string
 		if (cur_pgn.find("+") != string::npos) move_config["is_check"] = true;
 		if (cur_pgn.find("#") != string::npos) move_config["is_checkmate"] = true;
 		if (cur_pgn.find("O") != string::npos) move_config["is_castling"] = true;
-		if (cur_pgn.find("ep") != string::npos) move_config["is_en_passant"] = true;
 		if (cur_pgn.find("1-0") != string::npos ||
 			cur_pgn.find("0-1") != string::npos ||
 			cur_pgn.find("1/2-1/2") != string::npos) move_config["is_result"] = true;
