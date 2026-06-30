@@ -1,14 +1,47 @@
-﻿# CMakeList.txt : CMake project for chess3d, include source and define
-# project specific logic here.
-#
-cmake_minimum_required (VERSION 3.8)
-set (CMAKE_CXX_STANDARD 17)
-project ("chess3d")
+﻿cmake_minimum_required(VERSION 3.8)
+set(CMAKE_CXX_STANDARD 17)
+project("chess3d")
 
-# Add source to this project's executable.
-file(GLOB chess3d_SRC
-     "src/*.hpp"
-     "src/*.cpp"
+set(ASSIMP_ROOT "C:/Users/snowi/source/repos/assimp")
+set(CPP_LIBS "C:/Users/snowi/Documents/cpp_libs")
+
+# Collect all source files
+file(GLOB_RECURSE CHESS3D_SOURCES "src/*.cpp")
+file(GLOB_RECURSE CHESS3D_HEADERS "src/*.hpp")
+
+# GLAD source and headers
+set(GLAD_SOURCE "src/opengl/glad.c")
+set(GLAD_INCLUDE "src/opengl")
+
+# Create executable with GLAD source included
+add_executable(chess3d ${CHESS3D_SOURCES} ${CHESS3D_HEADERS} ${GLAD_SOURCE})
+
+# Include directories
+target_include_directories(chess3d PRIVATE
+    "${GLAD_INCLUDE}"
+    "${ASSIMP_ROOT}/build/include"
+    "${ASSIMP_ROOT}/include"
+    "${CPP_LIBS}/Include"
 )
 
-add_executable(chess3d ${chess3d_SRC})
+# Link libraries
+target_link_libraries(chess3d PRIVATE
+    "${CPP_LIBS}/Libs/glfw3.lib"
+    "${ASSIMP_ROOT}/build/lib/Release/assimp-vc143-mt.lib"
+    opengl32
+)
+
+# C:\Users\snowi\source\repos\assimp\build\include;
+# C:\Users\snowi\source\repos\assimp\include;
+# C:\Users\snowi\Documents\cpp_libs\Include;
+# $(IncludePath)
+
+# C:\Users\snowi\source\repos\assimp\build\lib\Release;
+# C:\Users\snowi\source\repos\assimp\lib;
+# C:\Users\snowi\Documents\cpp_libs\Libs;
+# $(LibraryPath)
+
+# glfw3.lib;
+# opengl32.lib;
+# assimp-vc143-mt.lib;
+# %(AdditionalDependencies)
