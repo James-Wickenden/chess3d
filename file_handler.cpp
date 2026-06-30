@@ -91,11 +91,13 @@ tuple<Chessboard, Gamestate> FileHandler::parse_pgn(Chessboard cb, vector<string
 		// determine if the move represents anything notable
 		map<string, bool> move_config =
 		{
-			{ "is_capture", false },
-			{ "is_check", false },
-			{ "is_checkmate", false },
-			{ "is_castling", false },
-			{ "is_promotion", false }
+			{ "is_capture",    false },
+			{ "is_check",      false },
+			{ "is_checkmate",  false },
+			{ "is_castling",   false },
+			{ "is_promotion",  false },
+			{ "is_en_passant", false },
+			{ "is_result",     false }
 		};
 		Piece promotion_choice = Piece::EMPTY;
 
@@ -107,10 +109,17 @@ tuple<Chessboard, Gamestate> FileHandler::parse_pgn(Chessboard cb, vector<string
 			{ 'K', Piece::KING   }
 		};
 
+		// Check for special characters in the move string, and set the move_config accordingly.
 		if (cur_pgn.find("x") != string::npos) move_config["is_capture"] = true;
 		if (cur_pgn.find("+") != string::npos) move_config["is_check"] = true;
 		if (cur_pgn.find("#") != string::npos) move_config["is_checkmate"] = true;
 		if (cur_pgn.find("O") != string::npos) move_config["is_castling"] = true;
+		if (cur_pgn.find("ep") != string::npos) move_config["is_en_passant"] = true;
+		if (cur_pgn.find("1-0") != string::npos ||
+			cur_pgn.find("0-1") != string::npos ||
+			cur_pgn.find("1/2-1/2") != string::npos) move_config["is_result"] = true;
+
+		// If the last character of the move is a piece notation, then this is a promotion and we can extract the piece from the map.
 		for (auto const& piece_map_items : piece_map)
 		{
 			if (cur_pgn.back() == piece_map_items.first)
@@ -118,6 +127,13 @@ tuple<Chessboard, Gamestate> FileHandler::parse_pgn(Chessboard cb, vector<string
 				move_config["is_promotion"] = true;
 				promotion_choice = piece_map_items.second;
 			}
+		}
+
+		// If the current pgn is a result, we can just return the current board and the checkmate gamestate.
+		if (move_config["is_result"])
+		{
+			cb.result = cur_pgn;
+			return make_tuple(cb, Gamestate::CHECKMATE);
 		}
 
 		if (!move_config["is_castling"])

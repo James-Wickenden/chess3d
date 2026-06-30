@@ -6,7 +6,7 @@ set (CMAKE_CXX_STANDARD 17)
 project ("chess3d")
 
 # Add source to this project's executable.
-add_executable (chess3d "chess3d.cpp" "chess3d.hpp" "logic.cpp" "logic.hpp" "console.cpp" "console.hpp"  "file_handler.cpp"  "file_handler.hpp")
+add_executable (chess3d "chess3d.cpp" "chess3d.hpp" "logic.cpp" "logic.hpp" "console.cpp" "console.hpp"  "file_handler.cpp"  "file_handler.hpp" "renderer.cpp")
 
 # TODO: Add tests and install targets if needed.
 

@@ -939,17 +939,37 @@ void handle_gamestate(Chessboard *cb, Gamestate gs, string *winner)
 			debug_print(Level::INFO, {"\033[1;33mThe king is in check\033[0m\n"});
 			return;
 		case Gamestate::CHECKMATE:
-			*winner = (cb->active_player == Colour::WHITE) ? "White" : "Black";
-			cb->result = (cb->active_player == Colour::WHITE) ? "1-0" : "0-1";
+			*winner = (cb->active_player == Colour::WHITE) ? "Black" : "White";
+			cb->result = (cb->active_player == Colour::WHITE) ? "0-1" : "1-0";
+			debug_print(Level::INFO, { "\x1B[2J\x1B[H" });
 			debug_print(Level::INFO, {"\033[1;33mThe king is checkmated! Game over. ", *winner, " wins!\033[0m\n"});
 			print_board(*cb, vector<Square>(), gs);
 			return;
 		case Gamestate::STALEMATE:
 			cb->result = "1/2-1/2";
+			debug_print(Level::INFO, { "\x1B[2J\x1B[H" });
 			debug_print(Level::INFO, {"\033[1;33mIts a stalemate! Game ends in a tie.\033[0m\n"});
 			print_board(*cb, vector<Square>(), gs);
 			return;
 	}
+}
+
+
+bool handle_game_end(Chessboard cb, Gamestate gs)
+{
+	// Handle the result of making the move
+	string winner;
+	handle_gamestate(&cb, gs, &winner);
+	if (gs == Gamestate::CHECKMATE || gs == Gamestate::STALEMATE)
+	{
+		// If the game is over, we need to write the PGN file for the game
+		// We should not return to the menu until the user has had a chance to see the final board state, so wait for input
+		save_game(cb);
+		cin.get();
+		debug_print(Level::INFO, { "Press any key to return to menu.\n" });
+		return true;
+	}
+	return false;
 }
 
 
@@ -967,10 +987,11 @@ void LogicEngine::loop_board(Chessboard cb, Gamestate gs)
 	cb.attacking_moves[Colour::BLACK] = find_all_attackable_squares(cb, Colour::BLACK, Piece_Finding_Mode::ATTACKABLE);
 
 	print_game_load_header((cb.active_player == Colour::WHITE) ? "White" : "Black", gs, cb.white_name, cb.black_name);
-	handle_gamestate(&cb, gs, &(string)"???");
-
-	while(true)
+	
+	while (true)
 	{
+		if (gs == Gamestate::CHECKMATE || gs == Gamestate::STALEMATE) break;
+
 		vector<Square> potential_moves = parse_attackable_squares(cb.valid_moves[cb.active_player]);
 		string num_potential_moves = to_string(potential_moves.size());
 		debug_print(Level::DEBUG, { "Number of valid moves: " , num_potential_moves , "\nValid moves are: " });
@@ -1005,24 +1026,15 @@ void LogicEngine::loop_board(Chessboard cb, Gamestate gs)
 		if (destination_position[0] == -1) continue; // if the user inputted 'back' to return to target square selection
 
 		// finally: make the move
-		Gamestate gs = make_move(&cb, vms, target_position, destination_position);
+		gs = make_move(&cb, vms, target_position, destination_position);
 
 		// Push the new board to the stack of boards. This includes the notation stack, state of the board and pieces, and game metadata e.g. move no.
 		board_stack.push(cb);
 
-		// Handle the result of making the move
-		string winner;
-		handle_gamestate(&cb, gs, &winner);
-		if (gs == Gamestate::CHECKMATE || gs == Gamestate::STALEMATE)
-		{
-			// If the game is over, we need to write the PGN file for the game
-			// We should not return to the menu until the user has had a chance to see the final board state, so wait for input
-			save_game(cb);
-			cin.get();
-			debug_print(Level::INFO, { "Press any key to return to menu.\n" });
-			return;
-		}
+		handle_game_end(cb, gs);
 	}
 
+	handle_gamestate(&cb, gs, &(string)"???");
+	cin.get();
 	return;
 }
