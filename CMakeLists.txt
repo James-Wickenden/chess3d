@@ -9,6 +9,8 @@ set(CPP_LIBS "" CACHE PATH "Path to third-party libraries")
 # Collect all source files (EXCLUDING chess3d.cpp - the entry point)
 file(GLOB_RECURSE CHESS3D_SOURCES "src/*.cpp")
 file(GLOB_RECURSE CHESS3D_HEADERS "src/*.hpp")
+# Collect all test files
+file(GLOB_RECURSE CHESS3D_TEST_SOURCES "test/*.cpp")
 
 # Remove chess3d.cpp from library sources
 list(FILTER CHESS3D_SOURCES EXCLUDE REGEX "chess3d\\.cpp$")
@@ -52,7 +54,7 @@ FetchContent_MakeAvailable(googletest)
 enable_testing()
 
 # Create test executable
-add_executable(chess3d_tests test/main.cpp)
+add_executable(chess3d_tests ${CHESS3D_TEST_SOURCES})
 
 # Link both the library and GTest to the test executable
 target_link_libraries(chess3d_tests PRIVATE
