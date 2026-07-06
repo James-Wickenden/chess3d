@@ -6,6 +6,21 @@ https://github.com/James-Wickenden/chess3d
 
 ---
 
+## Building 
+
+- This project is built with CMake.
+- To build:
+	- Clone the repo and make a copy of the `CMakeSettings.template.json` file in the root directory and rename it to `CMakeSettings.json`.
+	- Replace `<path to ASSIMP>` with the path to your ASSIMP installation.
+	- Replace `<path to libs>` with the path to your libraries folder containing the following structure:
+		- Include
+			- glad
+			- GLFW
+			- glm
+			- KHR
+		- Libs
+			- glfw3.lib
+
 ## Todo:
 
 - Parse model OBJs and MTLs into 3d space with openGL

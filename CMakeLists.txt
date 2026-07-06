@@ -1,8 +1,8 @@
 ﻿set(CMAKE_CXX_STANDARD 17)
 project("chess3d")
 
-set(ASSIMP_ROOT "C:/Users/snowi/source/repos/assimp")
-set(CPP_LIBS "C:/Users/snowi/Documents/cpp_libs")
+set(ASSIMP_ROOT "" CACHE PATH "Path to Assimp")
+set(CPP_LIBS "" CACHE PATH "Path to third-party libraries")
 
 # Collect all source files
 file(GLOB_RECURSE CHESS3D_SOURCES "src/*.cpp")
