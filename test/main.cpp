@@ -1,9 +1,8 @@
-// Entry point for the test suite.
-// Test framework uses googletest framework
+ //Entry point for the test suite.
+ //Test framework uses googletest framework
 
-//#include <gtest/gtest.h>
-//#include "test_logic.cpp"
-//
+#include <gtest/gtest.h>
+
 //int main(int argc, char** argv)
 //{
 //    testing::InitGoogleTest(&argc, argv);
