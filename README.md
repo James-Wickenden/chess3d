@@ -20,6 +20,8 @@ https://github.com/James-Wickenden/chess3d
 			- KHR
 		- Libs
 			- glfw3.lib
+- Open the project in Visual Studio and build.
+- This should build two executables: `chess3d` and `chess3d_test`. The first is the main program, the second is a test suite.
 
 ## Todo:
 

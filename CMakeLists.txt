@@ -52,34 +52,19 @@ FetchContent_MakeAvailable(googletest)
 enable_testing()
 
 # Create test executable
-add_executable(hello_test test/main.cpp)
+add_executable(chess3d_tests test/main.cpp)
 
 # Link both the library and GTest to the test executable
-target_link_libraries(hello_test PRIVATE
+target_link_libraries(chess3d_tests PRIVATE
     chess3d_lib
     GTest::gtest_main
 )
 
 # Include directories for tests
-target_include_directories(hello_test PRIVATE
+target_include_directories(chess3d_tests PRIVATE
     "src"
     "extern"
 )
 
 include(GoogleTest)
-gtest_discover_tests(hello_test)
-
-# C:\Users\snowi\source\repos\assimp\build\include;
-# C:\Users\snowi\source\repos\assimp\include;
-# C:\Users\snowi\Documents\cpp_libs\Include;
-# $(IncludePath)
-
-# C:\Users\snowi\source\repos\assimp\build\lib\Release;
-# C:\Users\snowi\source\repos\assimp\lib;
-# C:\Users\snowi\Documents\cpp_libs\Libs;
-# $(LibraryPath)
-
-# glfw3.lib;
-# opengl32.lib;
-# assimp-vc143-mt.lib;
-# %(AdditionalDependencies)
+gtest_discover_tests(chess3d_tests)
