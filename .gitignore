@@ -33,5 +33,7 @@
 
 .vs
 out
-
+_deps/*
+CMakeFiles/*
 CMakeSettings.json
+*_include.cmake
