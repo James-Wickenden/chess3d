@@ -1,5 +1,4 @@
-﻿cmake_minimum_required(VERSION 3.8)
-set(CMAKE_CXX_STANDARD 17)
+﻿set(CMAKE_CXX_STANDARD 17)
 project("chess3d")
 
 set(ASSIMP_ROOT "C:/Users/snowi/source/repos/assimp")
@@ -9,16 +8,15 @@ set(CPP_LIBS "C:/Users/snowi/Documents/cpp_libs")
 file(GLOB_RECURSE CHESS3D_SOURCES "src/*.cpp")
 file(GLOB_RECURSE CHESS3D_HEADERS "src/*.hpp")
 
-# GLAD source and headers
-set(GLAD_SOURCE "src/opengl/glad.c")
-set(GLAD_INCLUDE "src/opengl")
+# Collect all external source files
+file(GLOB_RECURSE EXTERN_SOURCES "extern/*.c" "extern/*.cpp")
 
-# Create executable with GLAD source included
-add_executable(chess3d ${CHESS3D_SOURCES} ${CHESS3D_HEADERS} ${GLAD_SOURCE})
+# Create executable with external sources included
+add_executable(chess3d ${CHESS3D_SOURCES} ${CHESS3D_HEADERS} ${EXTERN_SOURCES})
 
 # Include directories
 target_include_directories(chess3d PRIVATE
-    "${GLAD_INCLUDE}"
+    "extern"
     "${ASSIMP_ROOT}/build/include"
     "${ASSIMP_ROOT}/include"
     "${CPP_LIBS}/Include"
