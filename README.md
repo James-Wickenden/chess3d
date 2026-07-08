@@ -30,10 +30,12 @@ https://github.com/James-Wickenden/chess3d
 - Adding a PGN to the game window
 - Sound effects!
 - Playing w a bot by API?
+- CI integration for testing?
 
 ## In progress:
 
 - Create low poly 3d chess models
+- Full test suite for chess logic
 
 ## Completed:
 
