@@ -70,3 +70,9 @@ target_include_directories(chess3d_tests PRIVATE
 
 include(GoogleTest)
 gtest_discover_tests(chess3d_tests)
+
+# Copy test positions to build directory
+add_custom_target(copy_assets
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/positions ${CMAKE_CURRENT_BINARY_DIR}/positions
+)
+add_dependencies(chess3d copy_assets)

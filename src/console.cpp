@@ -240,6 +240,53 @@ void ConsoleEngine::print_board(Chessboard chessboard, vector<Square> valid_move
 }
 
 
+// Get a map of the files in a given directory, with an integer id for each file.
+// int cur_id is modified to track the highest index the user can load.
+map<int, string> get_file_map(fs::path p, int *cur_id)
+{
+	map<int, string> id_game_map;
+	map<int, string> failed_id_game_map = { { -1, "No files found" } };
+	try
+	{
+		if (!fs::exists(p))
+		{
+			// create the directory if it doesn't exist
+			fs::create_directory(p);
+		}
+
+		bool has_files = false;
+		for (const auto& entry : fs::directory_iterator(p))
+		{
+			string gamepath = entry.path().string();
+			string base_filename = gamepath.substr(gamepath.find_last_of("/\\") + 1);
+			debug_print(Level::INFO, { to_string(*cur_id), ".  ", base_filename + "\n" });
+			id_game_map[*cur_id] = base_filename;
+			(*cur_id)++;
+			has_files = true;
+		}
+
+		if (!has_files)
+		{
+			debug_print(Level::ERROR, { "\033[1;31mNo games found in directory: " + p.string() + ". Press ENTER to continue.\033[0m\n" });
+			cin.get();
+			return failed_id_game_map;
+		}
+	}
+	catch (const fs::filesystem_error& e)
+	{
+		debug_print(Level::ERROR, { "\033[1;31mFilesystem error: " + string(e.what()) + ". Press ENTER to continue.\033[0m\n" });
+		cin.get();
+	}
+	catch (const exception& e)
+	{
+		debug_print(Level::ERROR, { "\033[1;31mError reading directory: " + string(e.what()) + ". Press ENTER to continue.\033[0m\n" });
+		cin.get();
+	}
+
+	return id_game_map;
+}
+
+
 // Defines the text based entry point, including loading games.
 void ConsoleEngine::menu_handler()
 {
@@ -256,15 +303,13 @@ void ConsoleEngine::menu_handler()
 		Chessboard cb;
 		string white_name, black_name, tmp_name;
 
-		map<int, string> test_board_map = {
-					{ 1, "positions/test_position.txt" },
-					{ 2, "positions/test_ep.txt" },
-					{ 3, "positions/test_notation.txt" },
-					{ 4, "positions/test_castling.txt" },
-					{ 5, "positions/test_promotion.txt" },
-					{ 6, "positions/test_stalemate.txt" }
-		};
+		// define some variables to help us track game files.
+		map<int, string> id_game_map;
+		fs::path p = fs::current_path();
+		int cur_id = 1;
+		string chosen_file;
 
+		// handle the user's menu choice
 		switch (menu_choice)
 		{
 		case 1:
@@ -286,32 +331,27 @@ void ConsoleEngine::menu_handler()
 			loop_board(cb, Gamestate::NEWGAME);
 			break;
 		case 2:
-			debug_print(Level::INFO, { "Select test board [1/2/3/4/5/6]:\n" });
-			menu_choice = get_int_input("  1. position\n  2. en passant\n  3. notation\n  4. castling\n  5. promotion\n  6. stalemate\n" , 1, 6);
-			debug_print(Level::INFO, { "\x1B[2J\x1B[H" });
+			p = p.append("positions");
+			id_game_map = get_file_map(p, &cur_id);
+			if (id_game_map[-1] == "No files found") break;
 
-			cb = Chessboard(test_board_map[menu_choice]);
-			cb.white_name = "test_white";
-			cb.black_name = "test_black";
-			cb.date = get_formatted_date();
+			menu_choice = get_int_input("\nSelect position with id: ", 1, cur_id - 1);
+			chosen_file = id_game_map[menu_choice];
+			if (exists(p.append(chosen_file)))
+				cb = Chessboard("positions/" + chosen_file);
+				cb.white_name = "test_white";
+				cb.black_name = "test_black";
+				cb.date = get_formatted_date();
 
-			loop_board(cb, Gamestate::NORMAL);
+				loop_board(cb, Gamestate::NORMAL);
 			break;
 		case 3:
-			fs::path p = fs::current_path().append("games");
-			map<int, string> id_game_map;
-			int cur_id = 1;
-			for (const auto& entry : fs::directory_iterator(p))
-			{
-				string gamepath = entry.path().string();
-				string base_filename = gamepath.substr(gamepath.find_last_of("/\\") + 1);
-				debug_print(Level::INFO, { to_string(cur_id), ".  ", base_filename + "\n" });
-				id_game_map[cur_id] = base_filename;
-				cur_id++;
-			}
+			p = p.append("games");
+			id_game_map = get_file_map(p, &cur_id);
+			if (id_game_map[-1] == "No files found") break;
 
 			menu_choice = get_int_input("\nSelect game with id: ", 1, cur_id - 1);
-			string chosen_file = id_game_map[menu_choice];
+			chosen_file = id_game_map[menu_choice];
 			if (exists(p.append(chosen_file)))
 				load_game(p);
 			break;
