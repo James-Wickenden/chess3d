@@ -89,7 +89,7 @@ vector<int> ConsoleEngine::get_input_target_square(Chessboard *cb, stack<Chessbo
 			if (cb->board[target_position[0]][target_position[1]].colour != cb->active_player)
 			{
 				debug_print(Level::INFO, { "\x1B[2J\x1B[H" });
-				debug_print(Level::INFO, { "\033[1;31mPiece selected belongs to opposite player\033[0m\n" });
+				debug_print(Level::INFO, { "\033[1;31mPiece selected belongs to opposite player or is empty\033[0m\n" });
 				continue;
 			}
 

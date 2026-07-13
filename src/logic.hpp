@@ -106,7 +106,7 @@ namespace LogicEngine
 	// Functions for finding moves, making moves, and handling the game state.
     std::vector<std::tuple<Square, std::vector<Square>>> 
         find_all_attackable_squares(Chessboard chessboard, Colour colour, Piece_Finding_Mode mode);
-
+	void get_valid_and_attacking_moves(Chessboard* chessboard);
     void loop_board(Chessboard cb, Gamestate gs);
     void switch_pieces(Chessboard* cb, std::vector<int> target_position, std::vector<int> destination_position);
 	bool is_dest_square_attackable_by_piece(std::tuple<Square, std::vector<Square>> potential_mover, std::vector<int> dest_position);

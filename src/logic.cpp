@@ -974,13 +974,17 @@ bool handle_game_end(Chessboard cb, Gamestate gs)
 
 
 // Find the valid move lists for each player
-void get_valid_and_attacking_moves(Chessboard *cb)
+void LogicEngine::get_valid_and_attacking_moves(Chessboard *chessboard)
 {
-	cb->valid_moves[Colour::WHITE] = find_all_attackable_squares(*cb, Colour::WHITE, Piece_Finding_Mode::VALID);
-	cb->valid_moves[Colour::BLACK] = find_all_attackable_squares(*cb, Colour::BLACK, Piece_Finding_Mode::VALID);
+	chessboard->valid_moves[Colour::WHITE] =
+		find_all_attackable_squares(*chessboard, Colour::WHITE, Piece_Finding_Mode::VALID);
+	chessboard->valid_moves[Colour::BLACK] =
+		find_all_attackable_squares(*chessboard, Colour::BLACK, Piece_Finding_Mode::VALID);
 
-	cb->attacking_moves[Colour::WHITE] = find_all_attackable_squares(*cb, Colour::WHITE, Piece_Finding_Mode::ATTACKABLE);
-	cb->attacking_moves[Colour::BLACK] = find_all_attackable_squares(*cb, Colour::BLACK, Piece_Finding_Mode::ATTACKABLE);
+	chessboard->attacking_moves[Colour::WHITE] =
+		find_all_attackable_squares(*chessboard, Colour::WHITE, Piece_Finding_Mode::ATTACKABLE);
+	chessboard->attacking_moves[Colour::BLACK] =
+		find_all_attackable_squares(*chessboard, Colour::BLACK, Piece_Finding_Mode::ATTACKABLE);
 }
 
 
