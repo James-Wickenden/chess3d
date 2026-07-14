@@ -154,7 +154,6 @@ vector<int> ConsoleEngine::get_input_destination_square(vector<Square> vms)
 
 		return destination_position;
 	}
-
 }
 
 
@@ -242,7 +241,7 @@ void ConsoleEngine::print_board(Chessboard chessboard, vector<Square> valid_move
 
 // Get a map of the files in a given directory, with an integer id for each file.
 // int cur_id is modified to track the highest index the user can load.
-map<int, string> get_file_map(fs::path p, int *cur_id)
+map<int, string> ConsoleEngine::get_file_map(fs::path p, int *cur_id)
 {
 	map<int, string> id_game_map;
 	map<int, string> failed_id_game_map = { { -1, "No files found" } };

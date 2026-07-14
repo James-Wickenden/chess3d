@@ -10,7 +10,7 @@
 #include "console.hpp"
 
 namespace FileHandler
-{
+{   
     std::string read_board_setup_file(std::string filename);
     bool save_game(LogicEngine::Chessboard cb);
     std::tuple<LogicEngine::Chessboard, LogicEngine::Gamestate> parse_pgn(LogicEngine::Chessboard cb, std::vector<std::string> pgn_moves);
