@@ -1,0 +1,9 @@
+[Event "James-Wickenden/chess3d Match"]
+[Site "https://github.com/James-Wickenden/chess3d"]
+[Date "2026.07.16"]
+[Round "1"]
+[White "White_P"]
+[Black "Black_P"]
+[Result ""]
+
+1.e4 d5 2.exd5 Nf6 3.Qh5 Na6 4.Qxf7+ Kxf7 5.a4 Nb4 6.a5 Nbxd5 7.b3 b5 8.b6ep axb6  

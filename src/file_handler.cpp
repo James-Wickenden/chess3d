@@ -16,9 +16,8 @@ vector<Square> use_extra_notation_to_find_mover(char pgn_indicator, vector<Squar
 // Take in a string for a text file, read the board, remove newline characters, and return it
 string FileHandler::read_board_setup_file(string filename)
 {
-	// todo: replace this with local pathing
-	string path_to_file = "C:\\Users\\snowi\\source\\repos\\chess3d\\";
-	ifstream file(path_to_file + filename);
+	fs::path path_to_file = fs::current_path().string();
+	ifstream file(path_to_file.append(filename));
 	string line;
 	string file_contents;
 	while (getline(file, line))
@@ -56,7 +55,7 @@ bool FileHandler::save_game(Chessboard cb)
 
 	// Then, we dump the PGN as stored in the chessboard object, ending with the game result.
 	game_string_data += cb.notation;
-	game_string_data += ' ' + cb.result + '\n';
+	game_string_data += (cb.result == "" ? "" : " ") + cb.result + '\n';
 
 	ofstream gamefile;
 	fs::path filename = fs::current_path().append("games").append(
@@ -96,7 +95,8 @@ tuple<Chessboard, Gamestate> FileHandler::parse_pgn(Chessboard cb, vector<string
 			{ "is_checkmate",  false },
 			{ "is_castling",   false },
 			{ "is_promotion",  false },
-			{ "is_result",     false }
+			{ "is_result",     false },
+			{ "is_en_passant", false  }
 		};
 		Piece promotion_choice = Piece::EMPTY;
 
@@ -109,12 +109,13 @@ tuple<Chessboard, Gamestate> FileHandler::parse_pgn(Chessboard cb, vector<string
 		};
 
 		// Check for special characters in the move string, and set the move_config accordingly.
-		if (cur_pgn.find("x") != string::npos) move_config["is_capture"] = true;
-		if (cur_pgn.find("+") != string::npos) move_config["is_check"] = true;
-		if (cur_pgn.find("#") != string::npos) move_config["is_checkmate"] = true;
-		if (cur_pgn.find("O") != string::npos) move_config["is_castling"] = true;
-		if (cur_pgn.find("1-0") != string::npos ||
-			cur_pgn.find("0-1") != string::npos ||
+		if (cur_pgn.find("x")		!= string::npos) move_config["is_capture"] = true;
+		if (cur_pgn.find("+")		!= string::npos) move_config["is_check"] = true;
+		if (cur_pgn.find("#")		!= string::npos) move_config["is_checkmate"] = true;
+		if (cur_pgn.find("O")		!= string::npos) move_config["is_castling"] = true;
+		if (cur_pgn.find("ep")		!= string::npos) move_config["is_en_passant"] = true;
+		if (cur_pgn.find("1-0")		!= string::npos ||
+			cur_pgn.find("0-1")     != string::npos ||
 			cur_pgn.find("1/2-1/2") != string::npos) move_config["is_result"] = true;
 
 		// If the last character of the move is a piece notation, then this is a promotion and we can extract the piece from the map.
@@ -150,11 +151,7 @@ tuple<Chessboard, Gamestate> FileHandler::parse_pgn(Chessboard cb, vector<string
 			vector<int> dest_square = convert_chessboard_square_to_int(dest_square_str);
 
 			// Find the valid move lists for each player
-			cb.valid_moves[Colour::WHITE] = find_all_attackable_squares(cb, Colour::WHITE, Piece_Finding_Mode::VALID);
-			cb.valid_moves[Colour::BLACK] = find_all_attackable_squares(cb, Colour::BLACK, Piece_Finding_Mode::VALID);
-
-			cb.attacking_moves[Colour::WHITE] = find_all_attackable_squares(cb, Colour::WHITE, Piece_Finding_Mode::ATTACKABLE);
-			cb.attacking_moves[Colour::BLACK] = find_all_attackable_squares(cb, Colour::BLACK, Piece_Finding_Mode::ATTACKABLE);
+			get_valid_and_attacking_moves(&cb);
 
 			vector<Square> potential_movers;
 			// Finding the piece that moved
@@ -216,6 +213,12 @@ tuple<Chessboard, Gamestate> FileHandler::parse_pgn(Chessboard cb, vector<string
 			if (move_config["is_promotion"])
 			{
 				cb.board[dest_square[0]][dest_square[1]].piece = promotion_choice;
+			}
+			if (move_config["is_en_passant"])
+			{
+				int captured_pawn_rank = (active_colour == Colour::WHITE) ? 4 : 3;
+				cb.board[captured_pawn_rank][dest_square[1]] = Square(captured_pawn_rank, dest_square[1]);
+				get_valid_and_attacking_moves(&cb);
 			}
 		}
 		else

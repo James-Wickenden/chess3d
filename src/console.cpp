@@ -258,6 +258,7 @@ map<int, string> ConsoleEngine::get_file_map(fs::path p, int *cur_id)
 		{
 			string gamepath = entry.path().string();
 			string base_filename = gamepath.substr(gamepath.find_last_of("/\\") + 1);
+			if (base_filename == "example.pgn") continue; // skip example pgn file for test
 			debug_print(Level::INFO, { to_string(*cur_id), ".  ", base_filename + "\n" });
 			id_game_map[*cur_id] = base_filename;
 			(*cur_id)++;
