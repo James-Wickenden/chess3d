@@ -104,6 +104,7 @@ namespace LogicEngine
 
     const int DIM_SIZE = 8; // size of the chessboard
 	// Functions for finding moves, making moves, and handling the game state.
+    std::vector<Square> get_valid_square_moves(Square target, Chessboard chessboard, Colour opp_colour);
     std::vector<std::tuple<Square, std::vector<Square>>> 
         find_all_attackable_squares(Chessboard chessboard, Colour colour, Piece_Finding_Mode mode);
 	void get_valid_and_attacking_moves(Chessboard* chessboard);

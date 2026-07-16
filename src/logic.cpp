@@ -555,7 +555,7 @@ vector<Square> trim_valid_moves(Square target, vector<vector<Square>> board, Col
 }
 
 // For a given square, find all the moves that piece can move to
-vector<Square> get_valid_square_moves(Square target, Chessboard chessboard, Colour opp_colour)
+vector<Square> LogicEngine::get_valid_square_moves(Square target, Chessboard chessboard, Colour opp_colour)
 {
 	vector<Square> prospective_moves;
 	vector<vector<Square>> board = chessboard.board;

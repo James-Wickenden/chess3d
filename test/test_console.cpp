@@ -11,6 +11,8 @@ namespace fs = std::filesystem;
 vector<int> simulate_target_square_input(const string& input, Chessboard* test_board, stack<Chessboard>* board_stack, stringstream* cout_buffer);
 vector<int> simulate_destination_square_input(const string& input, Chessboard* test_board, vector<int> target_position, stringstream* cout_buffer);
 
+const int NUM_TEST_POSITIONS = 8;
+
 TEST(InputTargetSquareTest, UndoAndExitInput)
 {
 	// Initialize a chessboard and stack for testing
@@ -220,8 +222,18 @@ TEST(GetFileMapTest, CorrectFileMapReturned) {
 	int cur_id = 1;
 	fs::path test_position_path = fs::current_path().append("positions");
 
+	// Redirect cout to stringstream buffer
+	streambuf* sbuf = std::cout.rdbuf();
+	stringstream cout_buffer;
+	cout.rdbuf(cout_buffer.rdbuf());
+
 	map<int, string> actual_id_game_map = get_file_map(test_position_path, &cur_id);
-	ASSERT_EQ(actual_id_game_map.size(), 8);
+	
+	ASSERT_EQ(actual_id_game_map.size(), NUM_TEST_POSITIONS);
+
+	// When done redirect cout to its old self
+	cout_buffer.str("");
+	cout.rdbuf(sbuf);
 }
 
 TEST(GetFileMapTest, InvalidFileMapHandled) {
@@ -233,9 +245,18 @@ TEST(GetFileMapTest, InvalidFileMapHandled) {
 	istringstream iss(input);
 	cin.rdbuf(iss.rdbuf());
 
+	// Redirect cout to stringstream buffer
+	streambuf* sbuf = std::cout.rdbuf();
+	stringstream cout_buffer;
+	cout.rdbuf(cout_buffer.rdbuf());
+
 	map<int, string> actual_id_game_map = get_file_map(test_position_path, &cur_id);
 	map<int, string> failed_id_game_map = { { -1, "No files found" } };
 	ASSERT_EQ(actual_id_game_map, failed_id_game_map);
+
+	// When done redirect cout to its old self
+	cout_buffer.str("");
+	cout.rdbuf(sbuf);
 }
 
 vector<int> simulate_target_square_input(const string& input, Chessboard* test_board, stack<Chessboard>* board_stack, stringstream* cout_buffer) {
