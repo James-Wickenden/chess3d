@@ -769,7 +769,7 @@ string get_ply_notation(Chessboard* cb, vector<int> target_position, vector<int>
 // 3. Build the PGN string for the move.
 // 4. Update the active player's turn
 // 5. Return a gamestate depending on the state of the game
-Gamestate make_move(Chessboard* cb, vector<Square> valid_piece_moves, vector<int> target_position, vector<int> destination_position)
+Gamestate LogicEngine::make_move(Chessboard* cb, vector<Square> valid_piece_moves, vector<int> target_position, vector<int> destination_position)
 {
 	Colour colour = cb->board[target_position[0]][target_position[1]].colour;
 	Colour opp_colour = (colour == Colour::WHITE) ? Colour::BLACK : Colour::WHITE;
