@@ -91,16 +91,57 @@ TEST(DetectMoves, DetectKingMovesIntoDanger) {
 	king_board.board[3][0] = Square(Piece::ROOK, Colour::BLACK, 3, 0, false, {});
 	king_board.board[4][3] = Square(Piece::PAWN, Colour::BLACK, 4, 3, false, {});
 
-	get_valid_and_attacking_moves(&king_board);
-
 	king_moves = get_valid_square_moves(king_board.board[king_col][king_row], king_board, Colour::BLACK);
 	ASSERT_EQ(king_moves.size(), 3);
 }
 
 TEST(DetectMoves, DetectPawnMovesFoward) {
-	
+	Chessboard pawn_board("positions/test_blank.txt");
+	vector<Square> pawn_moves;
+
+	// A white pawn on the second rank should be able to move one or two squares forward
+	int pawn_row = 1, pawn_col = 4;
+	pawn_board.board[pawn_row][pawn_col] = Square(Piece::PAWN, Colour::WHITE, pawn_row, pawn_col, false, {});
+	pawn_moves = get_valid_square_moves(pawn_board.board[pawn_row][pawn_col], pawn_board, Colour::BLACK);
+	ASSERT_EQ(pawn_moves.size(), 2);
+
+	// Move the pawn forward to the seventh rank
+	switch_pieces(&pawn_board, { pawn_row, pawn_col }, { 6, pawn_col });
+	pawn_board.board[6][pawn_col].has_moved = true;
+	pawn_moves = get_valid_square_moves(pawn_board.board[6][pawn_col], pawn_board, Colour::BLACK);
+	ASSERT_EQ(pawn_moves.size(), 1);
+
+	// Move the pawn forward to the eighth rank
+	switch_pieces(&pawn_board, { pawn_row, pawn_col }, { 7, pawn_col });
+	pawn_moves = get_valid_square_moves(pawn_board.board[7][pawn_col], pawn_board, Colour::BLACK);
+	ASSERT_EQ(pawn_moves.size(), 0);
+
+	// A black pawn on the seventh rank should be able to move one or two squares forward
+	pawn_row = 7, pawn_col = 5;
+	pawn_board.board[pawn_row][pawn_col] = Square(Piece::PAWN, Colour::BLACK, pawn_row, pawn_col, false, {});
+	pawn_moves = get_valid_square_moves(pawn_board.board[pawn_row][pawn_col], pawn_board, Colour::WHITE);
+	ASSERT_EQ(pawn_moves.size(), 2);
 }
 
 TEST(DetectMoves, DetectPawnMovesAttacking) {
+	Chessboard pawn_board("positions/test_blank.txt");
+	vector<Square> pawn_moves;
 
+	// A white pawn on the second rank should be able to move one or two squares forward
+	// If there are black pieces diagonally in front of it, it should be able to capture them
+	int pawn_row = 1, pawn_col = 4;
+	pawn_board.board[pawn_row][pawn_col] = Square(Piece::PAWN, Colour::WHITE, pawn_row, pawn_col, false, {});
+	
+	pawn_board.board[pawn_row + 1][pawn_col - 1] = Square(Piece::ROOK, Colour::BLACK, pawn_row + 1, pawn_col - 1, false, {});
+	pawn_board.board[pawn_row + 1][pawn_col + 1] = Square(Piece::ROOK, Colour::BLACK, pawn_row + 1, pawn_col + 1, false, {});
+	
+	pawn_moves = get_valid_square_moves(pawn_board.board[pawn_row][pawn_col], pawn_board, Colour::BLACK);
+	ASSERT_EQ(pawn_moves.size(), 4);
+
+	// If the rooks are white they should not be capturable
+	pawn_board.board[pawn_row + 1][pawn_col - 1].colour = Colour::WHITE;
+	pawn_board.board[pawn_row + 1][pawn_col + 1].colour = Colour::WHITE;
+
+	pawn_moves = get_valid_square_moves(pawn_board.board[pawn_row][pawn_col], pawn_board, Colour::BLACK);
+	ASSERT_EQ(pawn_moves.size(), 2);
 }
