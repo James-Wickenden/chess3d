@@ -25,8 +25,6 @@ https://github.com/James-Wickenden/chess3d
 
 ## Todo:
 
-- Parse model OBJs and MTLs into 3d space with openGL
-- Add camera controls w/ tutorial help with mouse/arrow key movement
 - Adding a PGN to the game window
 - Sound effects!
 - Playing w a bot by API?
@@ -35,7 +33,8 @@ https://github.com/James-Wickenden/chess3d
 ## In progress:
 
 - Create low poly 3d chess models
-- Full test suite for chess logic
+- Parse model OBJs and MTLs into 3d space with openGL
+- Add camera controls w/ tutorial help with mouse/arrow key movement
 
 ## Completed:
 
@@ -57,9 +56,9 @@ https://github.com/James-Wickenden/chess3d
 	- Storing moves as notation
 	- Undoing moves with a gamestate stack
 	- Pawn promotions
-	- PGN white/black player names, and other metadata
-	- Create the game logic for chess, based on building the incremental steps of a gameplay session:
-		- Saving/loading games
+- PGN white/black player names, and other metadata
+- Saving/loading games
+- Full ctest suite for chess logic
 
 ---
 

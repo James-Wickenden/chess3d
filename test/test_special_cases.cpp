@@ -88,6 +88,7 @@ TEST(CastlingTest, AssertShortCastlingIsHandledCorrectly) {
 TEST(CastlingTest, AssertCastlingThroughOrIntoCheckIsInvalid) {
 	Chessboard test_board("positions/test_castling.txt");
 	vector<Square> king_moves;
+	get_valid_and_attacking_moves(&test_board);
 
 	// The white king should have three valid moves as it cannot castle
 	king_moves = test_board.find_valid_moves(test_board.board[0][4]);

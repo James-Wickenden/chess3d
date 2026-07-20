@@ -76,3 +76,10 @@ add_custom_target(copy_assets
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/positions ${CMAKE_CURRENT_BINARY_DIR}/positions
 )
 add_dependencies(chess3d copy_assets)
+
+# Add cache variables for log level
+set(CHESS3D_LOG_LEVEL "DEBUG" CACHE STRING "Default log level for chess3d executable")
+set(CHESS3D_TESTS_LOG_LEVEL "INFO" CACHE STRING "Default log level for chess3d_tests executable")
+
+target_compile_definitions(chess3d PRIVATE CHESS3D_DEFAULT_LOG_LEVEL=${CHESS3D_LOG_LEVEL})
+target_compile_definitions(chess3d_tests PRIVATE CHESS3D_DEFAULT_LOG_LEVEL=${CHESS3D_TESTS_LOG_LEVEL})

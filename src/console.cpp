@@ -12,11 +12,10 @@ static string random_string(size_t length);
 static string get_formatted_date();
 bool is_square_input_valid(string input);
 int get_int_input(string request_phrase, int min_allowed, int max_allowed);
+static Level get_default_log_level();
 
-// Controls the level of debug output.
-// Levels are DEBUG, INFO, ERROR, NONE.
-Level current_log_level = Level::DEBUG;
-
+// Controls the level of debug output
+Level current_log_level = get_default_log_level();
 
 // Compare the log level of the message to be printed to the current log level, and if so then print it to the console.
 void ConsoleEngine::debug_print(Level log_level, vector<string> output)
@@ -466,4 +465,20 @@ bool is_square_input_valid(string input)
 	if (file < 'a' || file > 'h') return false;
 	if (rank < '1' || rank > '8') return false;
 	return true;
+}
+
+// Map string to enum at startup
+static Level get_default_log_level()
+{
+	const char* env_log_level = getenv("CHESS3D_LOG_LEVEL");
+	if (env_log_level)
+	{
+		std::string level_str(env_log_level);
+		if (level_str == "DEBUG") return Level::DEBUG;
+		if (level_str == "INFO") return Level::INFO;
+		if (level_str == "ERROR") return Level::ERROR;
+		if (level_str == "NONE") return Level::NONE;
+	}
+
+	return Level::DEBUG;
 }
